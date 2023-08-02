@@ -17,3 +17,9 @@ config_app = {
         'name': db_mongo_name
     }
 }
+
+def config_splitList(s, text, n):
+    try:
+        return text.split(s)[n] if len(text.split(s)) > n else None
+    except:
+        return None

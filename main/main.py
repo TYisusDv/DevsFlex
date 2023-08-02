@@ -11,7 +11,15 @@ csrf.init_app(app)
 @app.route('/<path:path>', methods = ['GET'])
 def main_web(path):    
     try:
-        return render_template('index.html')
+        v_config_splitList = [config_splitList('/', path, i) for i in range(10)]
+        if not v_config_splitList[0] and not v_config_splitList[1]:
+            return 'MAIN'
+        if v_config_splitList[0] == 'auth' and not v_config_splitList[1]:
+            return render_template('/auth/index.html')
+        elif v_config_splitList[0] == 'panel' and not v_config_splitList[1]:
+            return render_template('/panel/index.html')
+        
+        return 'ERROR 404'
     except Exception as e:
         #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
         return json.dumps({'success': False, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': 'An error occurred! The error was reported correctly and we will be working to fix it.'}), 500
@@ -66,4 +74,4 @@ def main_error_505(e):
     return 'Error 505'
 
 if __name__ == '__main__':
-    app.run(host = 'pos.localhost', debug = config_app['debug'])
+    app.run(host = 'localhost', debug = config_app['debug'])

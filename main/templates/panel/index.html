@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevsFlex - Panel</title>
+    <link rel="stylesheet" href="/assets/vendor/animate.min.css"></style>
+    <link rel="stylesheet" href="/assets/css/panel.css"></style>
+    <link rel="stylesheet" href="/assets/vendor/fontawesome-free-6.4.0-web/css/all.min.css"></style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="content">
+            <i class="btn fa-solid fa-bars active"></i>            
+            <a class="name" href="/"><h1>DevsFlex</h1> <span>PANEL</span></a>
+            <div class="user">
+                <div class="info">
+                    <p>Jesus Navarro</p>
+                    <i class="fa-regular fa-user"></i>
+                </div>
+                <div class="dropdown animate__animated animate__faster">
+                    <ul>
+                        <li><a href=""><i class="fa-solid fa-circle-user"></i> Cuenta</a></li>
+                        <li><a href=""><i class="fa-regular fa-user"></i> Cuenta</a></li>
+                        <li class="separate"></li>
+                        <li><a href=""><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesion</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav> 
+    <nav class="navbar-menu active">
+        <div class="content">
+            <ul class="menu">
+                <li class="name"><span>Navegación</span></li>
+                <li><a href=""><i class="fa-solid fa-home"></i> <span>Inicio</span></a></li>
+                <li class="name"><span>Administración</span></li>
+                <li><a href=""><i class="fa-solid fa-chart-line"></i> <span>Estadisticas</span></a></li>
+                <li><a href=""><i class="fa-solid fa-user"></i> <span>Usuarios</span></a></li>
+                <li><a href=""><i class="fa-solid fa-user-tie"></i> <span>Clientes</span></a></li>
+                <li><a href=""><i class="fa-solid fa-map-location-dot"></i> <span>Sucursales y almacenes</span></a></li>
+                <li><a href=""><i class="fa-solid fa-barcode"></i> <span>Productos</span></a></li>
+                <li><a href=""><i class="fa-solid fa-industry"></i> <span>Proveedores</span></a></li>
+                <li><a href=""><i class="fa-solid fa-file-invoice-dollar"></i> <span>Ventas</span></a></li>
+                <li class="name"><span>Sobre DevsFlex</span></li>
+                <li><a href=""><i class="fa-solid fa-circle-info"></i> <span>Información</span></a></li>
+                <li><a href=""><i class="fa-solid fa-user-lock"></i> <span>Política de privacidad</span></a></li>
+                <li><a href=""><i class="fa-solid fa-triangle-exclamation"></i> <span>Términos y condiciones</span></a></li>
+                <li><a href=""><i class="fa-solid fa-cookie"></i> <span>Política de cookies</span></a></li>                
+            </ul>
+            <p class="footer">© 2023 DevsFlex. Reservados todos los derechos.</p>
+        </div>
+    </nav>
+    <section class="main-content active">
+        <div class="preloader">
+            <div class="content">
+                <div class="title"></div>
+                <div class="path"></div>
+            </div> 
+            <div class="content">
+                <div class="info"></div>
+                <div class="info"></div>
+                <div class="info"></div>
+                <div class="table"></div>
+            </div>        
+        </div>
+    </section>
+    <script src="/assets/js/jquery-3.7.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var main_screenSmall = $(window).width() <= 1023;
+            $(".navbar-menu .content ul li a span").fadeToggle(50);
+            
+            if (!main_screenSmall) {
+                $(".navbar .content .btn").toggleClass("active");                
+                $(".navbar-menu").toggleClass("active");
+                $(".main-content").toggleClass("active");
+            }
+            
+            $(window).on("resize", function(){
+                main_screenSmall = $(window).width() <= 1023;
+            });
+
+            $(document).on("click", ".navbar .content .btn", function(){
+                $(this).toggleClass("active");
+                if (!main_screenSmall) {
+                    $(".navbar-menu .content ul li a span").fadeToggle(50);
+                }
+                $(".navbar-menu").toggleClass("active");
+                $(".main-content").toggleClass("active");
+            });
+
+            $(document).on("click", ".navbar .content .user", function(event) {
+                var $dropdown = $(this).find(".dropdown");
+                if ($dropdown.hasClass("active")) {
+                    api_closeDropdown($dropdown);
+                } else {
+                    api_openDropdown($dropdown);
+                }
+                event.stopPropagation();
+            });
+
+            $(document).on("click", function(event) {
+                var $dropdown = $(".navbar .content .user .dropdown");
+                if ($dropdown.hasClass("active") && !$(event.target).closest(".navbar .content .user .dropdown").length) {
+                    api_closeDropdown($dropdown);
+                }
+            });
+        });        
+
+        function api_openDropdown($dropdown) {
+            $dropdown.css("display", "block");
+            $dropdown.removeClass("animate__fadeOutRight");
+            $dropdown.addClass("active animate__fadeInRight");
+        }
+
+        function api_closeDropdown($dropdown) {
+            $dropdown.css("display", "block");
+            $dropdown.removeClass("animate__fadeInRight");
+            $dropdown.addClass("animate__fadeOutRight");
+            $dropdown.removeClass("active");
+        }
+    </script>
+</body>
+</html>
