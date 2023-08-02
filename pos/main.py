@@ -66,4 +66,4 @@ def main_error_505(e):
     return 'Error 505'
 
 if __name__ == '__main__':
-    app.run(host = '0.0.0.0', debug = config_app['debug'])
+    app.run(host = 'pos.localhost', debug = config_app['debug'])
