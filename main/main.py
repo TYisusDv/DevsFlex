@@ -15,7 +15,8 @@ def main_web(path):
         if not v_config_splitList[0] and not v_config_splitList[1]:
             return 'MAIN'
         if v_config_splitList[0] == 'auth' and not v_config_splitList[1]:
-            return render_template('/auth/index.html')
+            theme = request.cookies.get('theme')
+            return render_template('/auth/index.html', theme = theme)
         elif v_config_splitList[0] == 'panel' and not v_config_splitList[1]:
             return render_template('/panel/index.html')
         
@@ -24,6 +25,19 @@ def main_web(path):
         #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
         return json.dumps({'success': False, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': 'An error occurred! The error was reported correctly and we will be working to fix it.'}), 500
 
+@app.before_request
+def main_setCookie():
+    try:
+        if 'theme' not in request.cookies:
+            expiration_date = datetime.now() + timedelta(days=36500)
+
+            response = make_response(redirect(request.path))
+            response.set_cookie('theme', 'white', expires=expiration_date)
+            return response
+    except Exception as e:
+        #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
+        pass
+    
 @app.errorhandler(400)
 def main_error_400(e):
     if request.method == 'POST':

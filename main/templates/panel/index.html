@@ -42,7 +42,7 @@
                 <li><a href=""><i class="fa-solid fa-barcode"></i> <span>Productos</span></a></li>
                 <li><a href=""><i class="fa-solid fa-industry"></i> <span>Proveedores</span></a></li>
                 <li><a href=""><i class="fa-solid fa-file-invoice-dollar"></i> <span>Ventas</span></a></li>
-                <li class="name"><span>Sobre DevsFlex</span></li>
+                <li class="name"><span>Ayuda</span></li>
                 <li><a href=""><i class="fa-solid fa-circle-info"></i> <span>Información</span></a></li>
                 <li><a href=""><i class="fa-solid fa-user-lock"></i> <span>Política de privacidad</span></a></li>
                 <li><a href=""><i class="fa-solid fa-triangle-exclamation"></i> <span>Términos y condiciones</span></a></li>
@@ -105,6 +105,7 @@
                 if ($dropdown.hasClass("active") && !$(event.target).closest(".navbar .content .user .dropdown").length) {
                     api_closeDropdown($dropdown);
                 }
+                event.stopPropagation();
             });
         });        
 

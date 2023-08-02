@@ -8,12 +8,12 @@
     <link rel="stylesheet" href="/assets/css/auth.css"></style>
     <link rel="stylesheet" href="/assets/vendor/fontawesome-free-6.4.0-web/css/all.min.css"></style>
 </head>
-<body>
+<body class="theme-{{theme}}">
     <div class="main-bg">
         <div class="bg img-1">
             <div class="color-1">
                 <h1>¡Vamos a trabajar ahora!</h1>
-                <p>Bienvenido/a ahora inicia sesión o regístrate.</p>
+                <p>Bienvenido/a ahora inicia sesión o regístrate.</p>                
             </div>            
         </div>
         <div class="bg img-2">
@@ -23,16 +23,51 @@
     <div class="main-content">
         <nav class="navbar">            
             <div class="content">                
-                <a class="name" href="/"><h1>DevsFlex</h1> <span>AUTH</span></a>                
+                <a class="name" href="/"><h1>DevsFlex</h1> <span>AUTH</span></a> 
+                <div class="dark-mode">
+                    <span>Dark Mode</span>
+                    <label class="custom-switch">                        
+                        <input type="checkbox" id="dark-mode" class="custom-switch__input" {% if theme == 'dark' %}checked{% endif %}>
+                        <span class="custom-switch__slider"></span>
+                    </label>
+                </div>              
             </div>
         </nav>
         <div class="box">
             <div class="card">
-
+                <h2 class="title">Iniciar sesión</h2>
+                <form action="">
+                    <div class="row">
+                        <div class="separate"></div>
+                    </div>                
+                    <div class="form-input">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" name="" id="" placeholder="Correo electrónico">
+                    </div>
+                    <div class="form-input">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" name="" id="" placeholder="Contraseña">
+                    </div>
+                    <button type="submit" class="btn"><i class="fa-solid fa-user"></i> Iniciar sesión</button>
+                    <div class="row">
+                        <p>¿No tienes cuenta? <a href="">Registrarse</a>.</p>
+                    </div> 
+                </form>    
             </div>
         </div>          
     </div>
     <div class="footer">© 2023 DevsFlex. Reservados todos los derechos.</div>
     <script src="/assets/js/jquery-3.7.0.min.js"></script>
+    <script src="/assets/js/jquery.cookie.min.js"></script>
+    <script>
+        $(document).ready(function() {          
+            $(document).on("click", "#dark-mode", function(event) {
+                $("body").toggleClass("theme-white theme-dark");
+                var newTheme = $("body").hasClass("theme-white") ? "white" : "dark";
+                $.cookie('theme', newTheme, { expires: 36500 });
+                event.stopPropagation();
+            });
+        });       
+    </script>
 </body>
 </html>
