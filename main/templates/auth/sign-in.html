@@ -1,0 +1,61 @@
+<h2 class="title">Iniciar sesión</h2>
+<form id="form-signIn" autocomplete="off">
+    <div class="row">
+        <div class="separate"></div>
+    </div>                
+    <div class="form-input">
+        <i class="fa-solid fa-envelope"></i>
+        <input type="text" name="email" placeholder="Correo electrónico">
+    </div>
+    <div class="form-input">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" name="password" placeholder="Contraseña">
+    </div>
+    <button type="submit" class="btn submit"><span><i class="fa-solid fa-right-to-bracket"></i> Iniciar sesión</span></button>
+    <div class="row">
+        <p>¿No tienes cuenta? <a href="/auth/sign-up">Registrarse</a>.</p>
+    </div> 
+</form>  
+<script>
+    var btnHtml = $("#form-signIn .btn.submit").html();
+    
+    $("#form-signIn").on("submit", function(e){
+        e.preventDefault();
+        var btn = $(this).find(".btn.submit");
+        
+        auth_loadloader(btn.find("span"), $("#main-preloader").html(), btn, true, 100, 400);        
+
+        var formData = new FormData(this);
+        formData.append("action", "sign-in")
+        
+        var response = auth_sendData({url: "data/auth", type: "POST", formData: formData});
+        setTimeout(function(){
+            response.then(function (response) {
+                if(!response.success){
+                    auth_loadloader(btn.find("span"), btnHtml, btn, false, 400, 400);
+
+                    $("#form-signIn").find(".row:first").after(auth_alert({text: response.msg}));
+                    return;
+                }            
+                
+                $("#form-signIn").find(".row:first").after(auth_alert({type: "primary", title: "¡Exito!", text: response.msg}));
+                setTimeout(function(){    
+                    var urlParams = new URLSearchParams(auth_pathSearch);
+                    var nextParam = urlParams.get("next");            
+                    if (nextParam) {                    
+                        if (auth_isValidURL(nextParam)) {
+                            location.href = nextParam;
+                            return;
+                        }
+                    }
+
+                    location.href = "/";
+                }, 2000);
+                return;
+            }).catch(function (response) {
+                auth_loadloader(btn.find("span"), btnHtml, btn, false, 400, 400);
+                return;
+            });
+        }, 1000);
+    }); 
+</script>
