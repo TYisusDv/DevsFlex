@@ -56,37 +56,18 @@ def main_web(path):
 
         #MAIN
         if request.method == 'GET' and path in ['']:
-            return 'MAIN'
-        
-        #AUTH
-        elif request.method == 'GET' and path in ['auth', 'auth/', 'auth/sign-in', 'auth/sign-up']:
-            if v_sessionVerify == 1:
-                next_param = request.args.get('next')
-                if next_param and config_isValidURL(next_param):
-                    return redirect(next_param)
-                
-                return redirect('/')
+            if v_sessionVerify == 0:
+                url_main = config_app['url_main'] + '/api/web/data/auth?action=token'
+                new_url = config_urlParam(url_main, 'next',  config_app['url_restaurant'] + '/api/web/data/auth?action=token')
+                return redirect(new_url)
             
-            theme = request.cookies.get('theme')
-            return render_template('/auth/index.html', theme = theme)
-
-        #AUTH LOGOUT
-        elif request.method == 'GET' and path == 'auth/logout':
-            if v_sessionVerify == 1:
-                model_user_sessions.delete(v_session_id)
-
-            session.clear()
-            return redirect('/auth')
-        
-        #PANEL
-        elif request.method == 'GET' and path in ['panel']:
-            return render_template('/panel/index.html')
+            return render_template('/index.html')
         
         #API
         elif v_config_splitList[0] == 'api':             
             #API WEB
             if v_config_splitList[1] == 'web':
-                action_param = request.args.get('action')                     
+                action_param = request.args.get('action')
                 action = v_requestForm.get('action')
                 
                 #WIDGETS
@@ -101,90 +82,19 @@ def main_web(path):
                 #DATA
                 elif v_config_splitList[2] == 'data':
                     if v_config_splitList[3] == 'auth' and not v_config_splitList[4]:                    
-                        if v_sessionVerify == 0 and request.method == 'POST' and action == 'sign-up':
-                            name = v_requestForm.get('name')
-                            if not config_validateForm(form = name, min = 1) or not config_verifyText(name):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un nombre válido e inténtelo de nuevo.'})
-                            
-                            name = html.escape(name.strip().capitalize())
-
-                            surname = v_requestForm.get('surname')
-                            if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
-                            
-                            surname = html.escape(surname.strip().capitalize())
-
-                            email = v_requestForm.get('email')
-                            if not config_validateForm(form = email, min = 1):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
-                            
-                            email = email.strip().lower()
-
-                            if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
-                                                  
-                            email_verify = model_users.get(action = 'email', email = email)
-                            if email_verify:
-                                return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
-
-                            password = v_requestForm.get('password')
-                            if not config_validateForm(form = password, min = 8):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
-                            elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
-                                return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
-                            
-                            cpassword = v_requestForm.get('cpassword')
-                            if not config_validateForm(form = cpassword, min = 1):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione la confirmacion de la contraseña válida e inténtelo de nuevo.'})
-                            
-                            if password != cpassword:
-                                return jsonify({'success': False, 'msg': 'Por favor, verifique ambas contraseñas e inténtelo de nuevo.'})                            
-                            
-                            user_id = config_genUniqueID()
-                            passw = bcrypt.hash(password)
-                            signup = model_users.insert(user_id, name, surname, email, passw)
-                            if not signup:
-                                return jsonify({'success': False, 'msg': 'No se pudo completar el registro. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
-                            
-                            return jsonify({'success': True, 'msg': 'Registro correcto, ahora puedes iniciar sesión. Redireccionando...'})
-                        elif v_sessionVerify == 0 and request.method == 'POST' and action == 'sign-in':
-                            email = v_requestForm.get('email')
-                            if not config_validateForm(form = email, min = 1):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
-                            
-                            password = v_requestForm.get('password')
-                            if not config_validateForm(form = password, min = 1):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida e inténtelo de nuevo.'})
-
-                            email_verify = model_users.get(action = 'email', email = email)
-                            if not email_verify:
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo o contraseña válidos e inténtelo de nuevo.'})
-                            
-                            if not bcrypt.verify(password, email_verify['password']):
-                                return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo o contraseña válidos e inténtelo de nuevo.'})
-                            
-                            session_id = str(uuid.uuid4())
-                            user_agent = request.headers.get('User-Agent', None)
-
-                            signin = model_user_sessions.insert(session_id, user_agent, email_verify['_id'])
-                            if not signin:
-                                return jsonify({'success': False, 'msg': 'No se pudo iniciar sesión. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
-                            
-                            session["user_id"] = email_verify['_id']
-                            session["session_id"] = session_id
-                            return jsonify({'success': True, 'msg': 'Inicio de sesión correcto. ¡Bienvenido/a! Redireccionando...'})
-                        elif v_sessionVerify == 1 and request.method == 'GET' and action_param == 'token':
-                            expiration_time = datetime_utc + timedelta(minutes=1)
-                            payload = {'session_id': v_session_id, 'exp': expiration_time}
-                            access_token = jwt.encode(payload, app.secret_key, algorithm = 'HS256')
-                            next_param = request.args.get('next')   
-                            if next_param and config_isValidURL(next_param):
-                                token_param = urlencode({'token': access_token})
-                                parsed_url = urlparse(next_param)
-                                new_query = token_param if not parsed_url.query else f'{parsed_url.query}&{token_param}'
-                                new_url = urlunparse(parsed_url._replace(query=new_query))
-                                return redirect(new_url)
-                                                
+                        if request.method == 'GET' and action_param == 'token':
+                            token = request.args.get('token')
+                            if v_sessionVerify == 0:
+                                if token:
+                                    try:
+                                        payload = jwt.decode(token, app.secret_key, algorithms = ['HS256'])
+                                        session['session_id'] = payload['session_id']
+                                        session['user_id'] = payload['user_id']
+                                    except jwt.ExpiredSignatureError:
+                                        return jsonify({"msg": "Token expirado"}), 401
+                                    except jwt.InvalidTokenError:
+                                        return jsonify({"msg": "Token inválido"}), 401
+                              
                             return redirect('/')
 
             return jsonify({'success': False, 'code': 'S404', 'msg': '¡Página no encontrada! Verifique la ruta.'}), 404
@@ -270,4 +180,4 @@ def main_setCookie():
         pass
 
 if __name__ == '__main__':
-    app.run(host = 'localhost', debug = config_app['debug'])
+    app.run(host = 'restaurant.localhost', port = 5001, debug = config_app['debug'])

@@ -173,19 +173,27 @@ def main_web(path):
                             session["user_id"] = email_verify['_id']
                             session["session_id"] = session_id
                             return jsonify({'success': True, 'msg': 'Inicio de sesión correcto. ¡Bienvenido/a! Redireccionando...'})
-                        elif v_sessionVerify == 1 and request.method == 'GET' and action_param == 'token':
-                            expiration_time = datetime_utc + timedelta(minutes=1)
-                            payload = {'session_id': v_session_id, 'exp': expiration_time}
-                            access_token = jwt.encode(payload, app.secret_key, algorithm = 'HS256')
-                            next_param = request.args.get('next')   
-                            if next_param and config_isValidURL(next_param):
-                                token_param = urlencode({'token': access_token})
-                                parsed_url = urlparse(next_param)
-                                new_query = token_param if not parsed_url.query else f'{parsed_url.query}&{token_param}'
-                                new_url = urlunparse(parsed_url._replace(query=new_query))
-                                return redirect(new_url)
-                                                
-                            return redirect('/')
+                        elif request.method == 'GET' and action_param == 'token':
+                            next_param = request.args.get('next')  
+
+                            if v_sessionVerify == 0: 
+                                url_next = config_app['url_main'] + '/auth/sign-in'
+
+                                if next_param and config_isValidURL(next_param):
+                                    url_next = config_urlParam(url_next, 'next', request.url)
+
+                                return redirect(url_next)
+                            elif v_sessionVerify == 1:
+                                expiration_time = datetime_utc + timedelta(minutes=1)
+                                payload = {'session_id': v_session_id, 'user_id': v_user_id, 'exp': expiration_time}
+                                token = jwt.encode(payload, app.secret_key, algorithm = 'HS256')                                
+                                
+                                url_next = config_app['url_main']
+
+                                if next_param and config_isValidURL(next_param):
+                                    url_next = config_urlParam(next_param, 'token', token)
+
+                                return redirect(url_next)
 
             return jsonify({'success': False, 'code': 'S404', 'msg': '¡Página no encontrada! Verifique la ruta.'}), 404
 
