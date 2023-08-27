@@ -21,6 +21,12 @@ config_app = {
     'url_restaurant': 'http://restaurant.localhost:5001'
 }
 
+config_routes_nocache = [
+    '/auth/sign-in',
+    '/auth/sign-up',
+    '/auth/logout'
+]
+
 def config_splitList(s, text, n):
     try:
         return text.split(s)[n] if len(text.split(s)) > n else None

@@ -17,8 +17,8 @@ cache = Cache(app)
 def main_sessionVerify():
     #0 = No Logged
     #1 = Logged
-    session_id = session.get('session_id', None)
-    user_id = session.get('user_id', None)
+    session_id = session.get('session_id')
+    user_id = session.get('user_id')
 
     if not session_id:
         return 0    
@@ -49,8 +49,8 @@ def main_web(path):
         v_config_splitList = [config_splitList('/', path, i) for i in range(10)]
         v_requestForm = request.form
         v_sessionVerify =  main_sessionVerify()
-        v_session_id = session.get('session_id', None)
-        v_user_id = session.get('user_id', None)
+        v_session_id = session.get('session_id')
+        v_user_id = session.get('user_id')
         datetime_utc = datetime.utcnow()
         datetime_now = datetime.now()
 

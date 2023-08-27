@@ -18,23 +18,27 @@ class model_users:
         return None
 
     @staticmethod
-    def insert(user_id, name, surname, email, password):
-        document = {
-            "_id": user_id,
-            "name": name,
-            "surname": surname,
-            "email": email,
-            "password": password,
-            "regdate": datetime.utcnow(),
-            "user_rol": {"$ref": "user_roles", "$id": "normal"}
-        } 
-
+    def insert(action = None, user_id = None, name = None, surname = None, email = None, password = None):
         try: 
-            data = db_mongo.users.insert_one(document, bypass_document_validation=True)            
+            if action == 'client':
+                document = {
+                    "_id": user_id,
+                    "name": name,
+                    "surname": surname,
+                    "email": email,
+                    "password": password,
+                    "regdate": datetime.utcnow(),
+                    "apps": None,
+                    "user_rol": {"$ref": "user_roles", "$id": "normal"}
+                } 
+
+                db_mongo.users.insert_one(document, bypass_document_validation = True)
+                
+                return True
+            
+            return False
         except Exception as e:
             return False
-        
-        return True
 
 class model_user_sessions: 
     @staticmethod
@@ -46,22 +50,25 @@ class model_user_sessions:
         return None  
 
     @staticmethod
-    def insert(session_id, useragent, user_id):
-        document = {
-            "_id": session_id,
-            "online": True,
-            "twofacauth": True,
-            "useragent": useragent,
-            "regdate": datetime.utcnow(),
-            "user": {"$ref": "users", "$id": user_id}
-        } 
-
+    def insert(action = None, session_id = None, useragent = None, user_id = None):
         try: 
-            data = db_mongo.user_sessions.insert_one(document, bypass_document_validation=True)            
+            if action == 'client':
+                document = {
+                    "_id": session_id,
+                    "online": True,
+                    "twofacauth": True,
+                    "useragent": useragent,
+                    "regdate": datetime.utcnow(),
+                    "user": {"$ref": "users", "$id": user_id}
+                }
+
+                db_mongo.user_sessions.insert_one(document, bypass_document_validation = True)
+                
+                return True
+            
+            return False
         except Exception as e:
             return False
-        
-        return True
 
     @staticmethod
     def delete(session_id):
@@ -70,7 +77,7 @@ class model_user_sessions:
         } 
 
         try: 
-            data = db_mongo.user_sessions.delete_many(document)            
+            db_mongo.user_sessions.delete_many(document)            
         except Exception as e:
             return False
         
