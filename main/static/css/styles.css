@@ -1,5 +1,3 @@
-@import url('design.css');
-
 @font-face {
     font-family: 'VisbyRound';
     src: url('/assets/fonts/VisbyRound/VisbyRoundCF-Regular.otf') format('opentype');
@@ -59,7 +57,7 @@
 :root {
     --primary: 32, 78, 207;
     --bg-body: 255, 255, 255;
-    --navbar-height: 60px;
+    --navbar-height: 65px;
     --text-color: #000000;
 }
 
@@ -79,7 +77,7 @@
 
 .navbar .container {
     display: flex;
-    padding: 0px 25px 0px 25px;
+    padding: 0px 30px 0px 30px;
     height: 100%;
     box-sizing: border-box;
 }
@@ -88,7 +86,7 @@
     display: flex;
     align-items: center;
     height: 100%;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: bold;
     color: rgba(var(--bg-body));
     text-decoration: none;
@@ -100,38 +98,47 @@
 }
 
 .app .section-info {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 70vh;
-    width: 100%; 
-    z-index: 0;   
+    background-image: url('/assets/images/bg-1.jpg');
 }
 
 .app .section-info .info {
     display: flex;
-    flex-direction: column;    
-    padding: var(--navbar-height) 25px 25px 25px;
-    width: 100%;
-    height: 100%;
-    background: rgba(var(--primary));
-    box-sizing: border-box;
-}
-
-.app .section-info .info .title {
-    text-transform: uppercase;
-    color: rgba(var(--bg-body));
-    font-size: 35px;
-}
-
-.app .section-info .info .description {
-    color: rgba(var(--bg-body), 0.8);
-    font-size: 25px;
-}
-
-.app .section-info .wave {
     position: absolute;
     width: 100%;
-    height: 100px;
+    height: 80vh;
+    z-index: 1;
+}
+
+.app .section-info .info .text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 50%;
+    font-size: 40px;
+    font-weight: bold;
+    margin-top: -180px;
+    padding: 0px 80px 0px 80px;
+    color: rgba(var(--bg-body));
+}
+
+.app .section-info .info .text {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+}
+
+.app .section-info .design {
+    position: relative;
+    background: rgba(var(--primary), 0.5);
+    width: 100%;
+    height: 80vh;
+    z-index: 0;
+}
+
+.app .section-info .design .wave {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    margin-bottom: -5px;
     bottom: 0;
 }
