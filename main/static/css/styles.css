@@ -68,6 +68,10 @@
     font-family: 'VisbyRound', 'Roboto', sans-serif;
 }
 
+.d-flex {
+    display: flex;
+}
+
 .navbar {
     position: absolute;
     width: 100%;
@@ -141,4 +145,44 @@
     height: auto;
     margin-bottom: -5px;
     bottom: 0;
+}
+
+.app .section-description {
+    width: 100%;
+    padding: 20px 20% 20px 20%;
+    box-sizing: border-box;
+}
+
+.app .section-description .description {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.app .section-description .description .data {
+    display: flex;
+    flex-direction: column;    
+    width: 60%;
+}
+
+.app .section-description .description .data h1 {    
+    font-size: 30px;
+    text-align: center;
+}
+
+.app .section-description .description .data p {    
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    font-size: 20px;
+    text-align: justify;
+    font-weight: 500;
+}
+
+.app .section-description .description .image {    
+    width: 40%;
+}
+
+.app .section-description .description .image .img {    
+    width: 100%;
 }

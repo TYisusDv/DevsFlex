@@ -57,11 +57,9 @@ def main_web(path):
         datetime_utc = datetime.utcnow()
         datetime_now = datetime.now()
 
-        #MAIN
         if request.method == 'GET' and path == '':
             return render_template('/index.html')
         
-        #AUTH
         elif request.method == 'GET' and path in ['auth', 'auth/', 'auth/sign-in', 'auth/sign-up']:
             if v_sessionVerify == 1:
                 if request.args.get('next') and config_isValidURL(request.args.get('next')):
@@ -72,100 +70,95 @@ def main_web(path):
             theme = request.cookies.get('theme')
             return render_template('/auth/index.html', theme = theme)
 
-        #AUTH LOGOUT
         elif request.method == 'GET' and path == 'auth/logout':
             if v_sessionVerify == 1:
                 model_user_sessions.delete(v_session_id)
 
             session.clear()
             return redirect('/auth')
-        
-        #PANEL
+    
         elif request.method == 'GET' and path in ['panel']:
             return render_template('/panel/index.html')
         
-        #API
         if v_sessionVerify == 0:
-            #WIDGET
             if request.method == 'GET' and path == 'api/web/widget/auth/sign-in':
                 return jsonify({'success': True, 'html': render_template('/auth/sign-in.html')})
             elif request.method == 'GET' and path == 'api/web/widget/auth/sign-up':
                 return jsonify({'success': True, 'html': render_template('/auth/sign-up.html')})
-            
-            #DATA
-            if request.method == 'POST' and path == 'api/web/data/auth' and v_action == 'sign-up':
-                name = v_requestForm.get('name')
-                if not config_validateForm(form = name, min = 1) or not config_verifyText(name):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un nombre válido e inténtelo de nuevo.'})
-                
-                name = html.escape(name.strip().capitalize())
+            elif request.method == 'POST' and path == 'api/web/data/auth':
+                if v_action == 'sign-up':
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1) or not config_verifyText(name):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un nombre válido e inténtelo de nuevo.'})
+                    
+                    name = html.escape(name.strip().capitalize())
 
-                surname = v_requestForm.get('surname')
-                if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
-                
-                surname = html.escape(surname.strip().capitalize())
+                    surname = v_requestForm.get('surname')
+                    if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
+                    
+                    surname = html.escape(surname.strip().capitalize())
 
-                email = v_requestForm.get('email')
-                if not config_validateForm(form = email, min = 1):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
-                
-                email = email.strip().lower()
+                    email = v_requestForm.get('email')
+                    if not config_validateForm(form = email, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+                    
+                    email = email.strip().lower()
 
-                if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
-                                        
-                email_verify = model_users.get(action = 'email', email = email)
-                if email_verify:
-                    return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+                    if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
+                                            
+                    email_verify = model_users.get(action = 'email', email = email)
+                    if email_verify:
+                        return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
 
-                password = v_requestForm.get('password')
-                if not config_validateForm(form = password, min = 8):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
-                elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
-                    return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
-                
-                cpassword = v_requestForm.get('cpassword')
-                if not config_validateForm(form = cpassword, min = 1):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione la confirmacion de la contraseña válida e inténtelo de nuevo.'})
-                
-                if password != cpassword:
-                    return jsonify({'success': False, 'msg': 'Por favor, verifique ambas contraseñas e inténtelo de nuevo.'})                            
-                
-                user_id = config_genUniqueID()
-                passw = bcrypt.hash(password)
+                    password = v_requestForm.get('password')
+                    if not config_validateForm(form = password, min = 8):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
+                    elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
+                        return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
+                    
+                    cpassword = v_requestForm.get('cpassword')
+                    if not config_validateForm(form = cpassword, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione la confirmacion de la contraseña válida e inténtelo de nuevo.'})
+                    
+                    if password != cpassword:
+                        return jsonify({'success': False, 'msg': 'Por favor, verifique ambas contraseñas e inténtelo de nuevo.'})                            
+                    
+                    user_id = config_genUniqueID()
+                    passw = bcrypt.hash(password)
 
-                signup = model_users.insert(action = 'client', user_id = user_id, name = name, surname = surname, email = email, password = passw)
-                if not signup:
-                    return jsonify({'success': False, 'msg': 'No se pudo completar el registro. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
-                
-                return jsonify({'success': True, 'msg': 'Registro correcto, ahora puedes iniciar sesión. Redireccionando...'})
-            elif request.method == 'POST' and path == 'api/web/data/auth' and v_action == 'sign-in':
-                email = v_requestForm.get('email')
-                if not config_validateForm(form = email, min = 1):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
-                
-                password = v_requestForm.get('password')
-                if not config_validateForm(form = password, min = 1):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida e inténtelo de nuevo.'})
+                    signup = model_users.insert(action = 'client', user_id = user_id, name = name, surname = surname, email = email, password = passw)
+                    if not signup:
+                        return jsonify({'success': False, 'msg': 'No se pudo completar el registro. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
+                    
+                    return jsonify({'success': True, 'msg': 'Registro correcto, ahora puedes iniciar sesión. Redireccionando...'})
+                elif v_action == 'sign-in':
+                    email = v_requestForm.get('email')
+                    if not config_validateForm(form = email, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+                    
+                    password = v_requestForm.get('password')
+                    if not config_validateForm(form = password, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida e inténtelo de nuevo.'})
 
-                email_verify = model_users.get(action = 'email', email = email)
-                if not email_verify:
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo o contraseña válidos e inténtelo de nuevo.'})
-                
-                if not bcrypt.verify(password, email_verify['password']):
-                    return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo o contraseña válidos e inténtelo de nuevo.'})
-                
-                session_id = str(uuid.uuid4())
-                user_agent = request.headers.get('User-Agent')
+                    email_verify = model_users.get(action = 'email', email = email)
+                    if not email_verify:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo o contraseña válidos e inténtelo de nuevo.'})
+                    
+                    if not bcrypt.verify(password, email_verify['password']):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo o contraseña válidos e inténtelo de nuevo.'})
+                    
+                    session_id = str(uuid.uuid4())
+                    user_agent = request.headers.get('User-Agent')
 
-                signin = model_user_sessions.insert(action = 'client', session_id = session_id, useragent = user_agent, user_id = email_verify['_id'])
-                if not signin:
-                    return jsonify({'success': False, 'msg': 'No se pudo iniciar sesión. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
-                
-                session["user_id"] = email_verify['_id']
-                session["session_id"] = session_id
-                return jsonify({'success': True, 'msg': 'Inicio de sesión correcto. ¡Bienvenido/a! Redireccionando...'})
+                    signin = model_user_sessions.insert(action = 'client', session_id = session_id, useragent = user_agent, user_id = email_verify['_id'])
+                    if not signin:
+                        return jsonify({'success': False, 'msg': 'No se pudo iniciar sesión. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
+                    
+                    session["user_id"] = email_verify['_id']
+                    session["session_id"] = session_id
+                    return jsonify({'success': True, 'msg': 'Inicio de sesión correcto. ¡Bienvenido/a! Redireccionando...'})
             elif request.method == 'GET' and path == 'api/web/data/auth' and v_action_param == 'token':
                 url_next = config_app['url_main'] + '/auth/sign-in'
 
@@ -175,7 +168,6 @@ def main_web(path):
                 return redirect(url_next)
         
         elif v_sessionVerify == 1:
-           #DATA
            if request.method == 'GET' and path == 'api/web/data/auth' and v_action_param == 'token':
                 if not request.args.get('next') or not config_isValidURL(request.args.get('next')):
                     return redirect('/')
@@ -188,71 +180,20 @@ def main_web(path):
                 
                 return redirect(url_next)
 
-        return 'ERROR 404' 
+        if request.method == 'POST' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'code': 'S404', 'msg': 'Page not found.'}), 404
+        elif request.method == 'GET' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'html': render_template('/error.html', code = '404', msg = 'Page not found.')}), 404
+
+        return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
     except Exception as e:
+        if request.method == 'POST' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'}), 500
+        elif request.method == 'GET' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'html': render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.')}), 500
+        
         #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
-        return jsonify({'success': False, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': '¡Ocurrió un error! El error se informó correctamente y estaremos trabajando para solucionarlo.'}), 500
-
-@app.route('/api/web/token/csrf', methods = ['GET'])
-@csrf.exempt
-def api_webTokenCSRF():
-    return jsonify({'success': True, 'token':  generate_csrf()}), 200
-
-@app.errorhandler(400)
-def main_error_400(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S400', 'msg': 'Bad request.'}), 400
-    
-    return 'Error 400'
-
-@app.errorhandler(401)
-def main_error_401(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S401', 'msg': 'Unauthorized.'}), 401
-    
-    return 'Error 401'
-
-@app.errorhandler(403)
-def main_error_403(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S403', 'msg': 'Forbidden.'}), 403
-    
-    return 'Error 403'
-
-@app.errorhandler(404)
-def main_error_404(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S404', 'msg': 'Page not found.'}), 404
-    
-    return 'Error 404'
-
-@app.errorhandler(405)
-def main_error_405(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S405', 'msg': 'Method not allowed.'}), 404
-    
-    return 'Error 405'
-
-@app.errorhandler(500)
-def main_error_500(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S500', 'msg': 'An error occurred! The error was reported correctly and we will be working to fix it.'}), 500
-    
-    return 'Error 500'
-
-@app.errorhandler(503)
-def main_error_503(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S503', 'msg': 'Service unavailable.'}), 503
-    
-    return 'Error 503'
-
-@app.errorhandler(505)
-def main_error_505(e):
-    if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S505', 'msg': 'HTTP Version not supported.'}), 505
-    
-    return 'Error 505'
+        return render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
 
 @app.before_request
 def main_setCookie():
@@ -266,6 +207,67 @@ def main_setCookie():
     except Exception as e:
         #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
         pass
+    
+@app.route('/api/web/token/csrf', methods = ['GET'])
+@csrf.exempt
+def api_webTokenCSRF():
+    return jsonify({'success': True, 'token':  generate_csrf()}), 200
+
+@app.errorhandler(400)
+def main_error_400(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S400', 'msg': 'Bad request.'}), 400
+    
+    return render_template('/error.html', code = '400', msg = 'Bad request.'), 400
+
+@app.errorhandler(401)
+def main_error_401(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S401', 'msg': 'Unauthorized.'}), 401
+    
+    return render_template('/error.html', code = '404', msg = 'Unauthorized.'), 401
+
+@app.errorhandler(403)
+def main_error_403(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S403', 'msg': 'Forbidden.'}), 403
+    
+    return render_template('/error.html', code = '404', msg = 'Forbidden.'), 403
+
+@app.errorhandler(404)
+def main_error_404(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S404', 'msg': 'Page not found.'}), 404
+    
+    return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
+
+@app.errorhandler(405)
+def main_error_405(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S405', 'msg': 'Method not allowed.'}), 405
+    
+    return render_template('/error.html', code = '404', msg = 'Method not allowed.'), 405
+
+@app.errorhandler(500)
+def main_error_500(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S500', 'msg': 'An error occurred! The error was reported correctly and we will be working to fix it.'}), 500
+    
+    return render_template('/error.html', code = '500', msg = f'An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
+
+@app.errorhandler(503)
+def main_error_503(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S503', 'msg': 'Service unavailable.'}), 503
+    
+    return render_template('/error.html', code = '404', msg = 'Service unavailable.'), 503
+
+@app.errorhandler(505)
+def main_error_505(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S505', 'msg': 'HTTP Version not supported.'}), 505
+    
+    return render_template('/error.html', code = '404', msg = 'HTTP Version not supported.'), 505
 
 if __name__ == '__main__':
     app.run(host = 'localhost', debug = config_app['debug'])
