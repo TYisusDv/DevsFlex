@@ -1,6 +1,3 @@
-from flask import Flask, render_template, request, redirect, url_for, session, make_response, send_file, jsonify
-from flask_wtf.csrf import CSRFProtect, generate_csrf
-from flask_caching import Cache
 from config import *
 from models import *
 
@@ -159,16 +156,18 @@ def main_web(path):
                     session["user_id"] = email_verify['_id']
                     session["session_id"] = session_id
                     return jsonify({'success': True, 'msg': 'Inicio de sesión correcto. ¡Bienvenido/a! Redireccionando...'})
-            elif request.method == 'GET' and path == 'api/web/data/auth' and v_action_param == 'token':
-                url_next = config_app['url_main'] + '/auth/sign-in'
+            elif request.method == 'GET' and path == 'api/web/data/auth':
+                if v_action_param == 'token':
+                    url_next = config_app['url_main'] + '/auth/sign-in'
 
-                if request.args.get('next') and config_isValidURL(request.args.get('next')):
-                    url_next = config_urlParam(url_next, 'next', request.url)
+                    if request.args.get('next') and config_isValidURL(request.args.get('next')):
+                        url_next = config_urlParam(url_next, 'next', request.url)
 
-                return redirect(url_next)
+                    return redirect(url_next)
         
         elif v_sessionVerify == 1:
-           if request.method == 'GET' and path == 'api/web/data/auth' and v_action_param == 'token':
+           if request.method == 'GET' and path == 'api/web/data/auth':
+            if v_action_param == 'token':
                 if not request.args.get('next') or not config_isValidURL(request.args.get('next')):
                     return redirect('/')
                         
@@ -268,3 +267,6 @@ def main_error_505(e):
         return jsonify({'success': False, 'code': 'S505', 'msg': 'HTTP Version not supported.'}), 505
     
     return render_template('/error.html', code = '404', msg = 'HTTP Version not supported.'), 505
+
+if __name__ == '__main__':
+    app_main.run(host = 'localhost', debug = config_app['debug'], port = 5000)

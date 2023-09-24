@@ -1,0 +1,181 @@
+from config import *
+from models import *
+
+app_restaurant = Flask(__name__, static_url_path='/assets', static_folder='static')
+app_restaurant.config['CACHE_TYPE'] = 'redis'
+app_restaurant.config['CACHE_REDIS_URL'] = 'redis://localhost:6379/0'
+app_restaurant.config['CACHE_DEFAULT_TIMEOUT'] = 300
+app_restaurant.secret_key = 'Secret_key_DevsFlex_1#9$0&2@'
+
+csrf = CSRFProtect()
+csrf.init_app(app_restaurant)
+cache = Cache(app_restaurant)
+
+def main_sessionVerify():
+    #0 = No Logged
+    #1 = Logged
+    session_id = session.get('session_id')
+    user_id = session.get('user_id')
+
+    if not session_id:
+        return 0    
+    elif not user_id:
+        return 0
+    
+    session_verify = model_main_user_sessions.get(action = "session_id", session_id = session_id)
+    if not session_verify:
+        session.clear()
+        return 0
+    elif user_id != session_verify["user"].id:
+        session.clear()
+        return 0
+    
+    return 1
+
+def cache_enabled():
+    if request.method in ['GET', 'HEAD', 'OPTIONS']:
+        if request.path in config_routes_nocache:
+            return False
+    
+    return True
+
+@app_restaurant.route('/', defaults={'path': ''})
+@app_restaurant.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])#@cache.cached(timeout = 300, unless = cache_enabled)
+def main_web(path):    
+    try:
+        v_config_splitList = [config_splitList('/', path, i) for i in range(10)]
+
+        v_requestForm = request.form
+        v_sessionVerify =  main_sessionVerify()
+        v_session_id = session.get('session_id')
+        v_user_id = session.get('user_id')
+        v_action = v_requestForm.get('action')
+        v_action_param = request.args.get('action')
+        datetime_utc = datetime.utcnow()
+        datetime_now = datetime.now()
+
+        if request.method == 'GET' and path == '':
+            if v_sessionVerify == 0:
+                url_main = f'{config_app["url_main"]}/api/web/data/auth?action=token'
+                new_url = config_urlParam(url_main, 'next', f'{config_app["url_restaurant"]}/api/web/data/auth?action=token')
+                return redirect(new_url)
+
+            return render_template('/restaurant/index.html')
+        
+        elif request.method == 'GET' and path == 'auth/logout':
+            if v_sessionVerify == 1:
+                model_main_user_sessions.delete(action = 'session', session_id = v_session_id)
+
+            session.clear()
+            return redirect(f'{config_app["url_main"]}/auth/logout')
+        
+        if v_sessionVerify == 0:
+            if request.method == 'GET' and path == 'api/web/data/auth':
+                if v_action_param == 'token':
+                    token = request.args.get('token')
+                    if token:
+                        try:
+                            payload = jwt.decode(token, app_restaurant.secret_key, algorithms = ['HS256'])
+                            session['session_id'] = payload['session_id']
+                            session['user_id'] = payload['user_id']
+                        except jwt.ExpiredSignatureError:
+                            return jsonify({"msg": "Token expirado"}), 401
+                        except jwt.InvalidTokenError:
+                            return jsonify({"msg": "Token inválido"}), 401
+                        
+                    return redirect('/')
+        
+        elif v_sessionVerify == 1:
+           pass
+
+        if request.method == 'POST' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'code': 'S404', 'msg': 'Page not found.'}), 404
+        elif request.method == 'GET' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'html': render_template('/error.html', code = '404', msg = 'Page not found.')}), 404
+
+        return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
+    except Exception as e:
+        if request.method == 'POST' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'}), 500
+        elif request.method == 'GET' and v_config_splitList[0] == 'api':
+            return jsonify({'success': True, 'html': render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.')}), 500
+        
+        #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
+        return render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
+
+@app_restaurant.before_request
+def main_setCookie():
+    try:
+        if 'theme' not in request.cookies:
+            expiration_date = datetime.now() + timedelta(days=36500)
+
+            response = make_response(redirect(request.path))
+            response.set_cookie('theme', 'white', expires=expiration_date)
+            return response
+    except Exception as e:
+        #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
+        pass
+    
+@app_restaurant.route('/api/web/token/csrf', methods = ['GET'])
+@csrf.exempt
+def api_webTokenCSRF():
+    return jsonify({'success': True, 'token':  generate_csrf()}), 200
+
+@app_restaurant.errorhandler(400)
+def main_error_400(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S400', 'msg': 'Bad request.'}), 400
+    
+    return render_template('/error.html', code = '400', msg = 'Bad request.'), 400
+
+@app_restaurant.errorhandler(401)
+def main_error_401(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S401', 'msg': 'Unauthorized.'}), 401
+    
+    return render_template('/error.html', code = '404', msg = 'Unauthorized.'), 401
+
+@app_restaurant.errorhandler(403)
+def main_error_403(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S403', 'msg': 'Forbidden.'}), 403
+    
+    return render_template('/error.html', code = '404', msg = 'Forbidden.'), 403
+
+@app_restaurant.errorhandler(404)
+def main_error_404(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S404', 'msg': 'Page not found.'}), 404
+    
+    return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
+
+@app_restaurant.errorhandler(405)
+def main_error_405(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S405', 'msg': 'Method not allowed.'}), 405
+    
+    return render_template('/error.html', code = '404', msg = 'Method not allowed.'), 405
+
+@app_restaurant.errorhandler(500)
+def main_error_500(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S500', 'msg': 'An error occurred! The error was reported correctly and we will be working to fix it.'}), 500
+    
+    return render_template('/error.html', code = '500', msg = f'An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
+
+@app_restaurant.errorhandler(503)
+def main_error_503(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S503', 'msg': 'Service unavailable.'}), 503
+    
+    return render_template('/error.html', code = '404', msg = 'Service unavailable.'), 503
+
+@app_restaurant.errorhandler(505)
+def main_error_505(e):
+    if request.method == 'POST':
+        return jsonify({'success': False, 'code': 'S505', 'msg': 'HTTP Version not supported.'}), 505
+    
+    return render_template('/error.html', code = '404', msg = 'HTTP Version not supported.'), 505
+
+if __name__ == '__main__':
+    app_restaurant.run(host = 'restaurant.localhost', debug = config_app['debug'], port = 5001)
