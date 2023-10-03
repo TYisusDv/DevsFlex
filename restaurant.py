@@ -54,7 +54,7 @@ def main_web(path):
         datetime_utc = datetime.utcnow()
         datetime_now = datetime.now()
 
-        if request.method == 'GET' and path == '':
+        if request.method == 'GET' and path in config_routes_restaurant:
             if v_sessionVerify == 0:
                 url_main = f'{config_app["url_main"]}/api/web/data/auth?action=token'
                 new_url = config_urlParam(url_main, 'next', f'{config_app["url_restaurant"]}/api/web/data/auth?action=token')
@@ -86,14 +86,50 @@ def main_web(path):
                     return redirect('/')
         
         elif v_sessionVerify == 1:
-           pass
+            if request.method == 'GET' and path == 'api/web/widget/dashboard':
+                return jsonify({'success': True, 'html': render_template('/restaurant/home/dashboard.html')})
+            elif request.method == 'POST' and path == 'api/web/data/table':
+                start = v_requestForm.get('start')
+                if not config_validateForm(form = start, min = 1):
+                    start = 0
+                
+                length = v_requestForm.get('length')
+                if not config_validateForm(form = length, min = 1):
+                    length = 10
+                
+                search = v_requestForm.get('search')
+                if not config_validateForm(form = search, min = 1):
+                    search = ''
+
+                order_column = v_requestForm.get('order_column')
+                if not config_validateForm(form = order_column, min = 1):
+                    order_column = '_id'
+
+                order_direction = v_requestForm.get('order_direction')
+                if not config_validateForm(form = order_direction, min = 1):
+                    order_direction = 'asc'
+
+                data = []
+                data_count = 0 
+
+                if v_action == 'manage_users':
+                    data = model_restaurant_users.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['actions'] = ''
+                        
+                    data_count = model_restaurant_users.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+
+                return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
+            elif request.method == 'GET' and path == 'api/web/widget/manage/users':
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users.html')})
+            
 
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': 'S404', 'msg': 'Page not found.'}), 404
         elif request.method == 'GET' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'html': render_template('/error.html', code = '404', msg = 'Page not found.')}), 404
 
-        return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
+        return render_template('/restaurant/error.html', code = '404', msg = 'Page not found.'), 404
     except Exception as e:
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'}), 500
@@ -101,7 +137,7 @@ def main_web(path):
             return jsonify({'success': True, 'html': render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.')}), 500
         
         #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
-        return render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
+        return render_template('/restaurant/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
 
 @app_restaurant.before_request
 def main_setCookie():
@@ -109,7 +145,7 @@ def main_setCookie():
         if 'theme' not in request.cookies:
             expiration_date = datetime.now() + timedelta(days=36500)
 
-            response = make_response(redirect(request.path))
+            response = make_response(redirect(request.full_path))
             response.set_cookie('theme', 'white', expires=expiration_date)
             return response
     except Exception as e:

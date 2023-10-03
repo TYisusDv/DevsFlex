@@ -166,18 +166,18 @@ def main_web(path):
                     return redirect(url_next)
         
         elif v_sessionVerify == 1:
-           if request.method == 'GET' and path == 'api/web/data/auth':
-            if v_action_param == 'token':
-                if not request.args.get('next') or not config_isValidURL(request.args.get('next')):
-                    return redirect('/')
-                        
-                expiration_time = datetime_utc + timedelta(minutes=1)
-                payload = {'session_id': v_session_id, 'user_id': v_user_id, 'exp': expiration_time}
-                token = jwt.encode(payload, app_main.secret_key, algorithm = 'HS256')                                                          
+            if request.method == 'GET' and path == 'api/web/data/auth':
+                if v_action_param == 'token':
+                    if not request.args.get('next') or not config_isValidURL(request.args.get('next')):
+                        return redirect('/')
+                            
+                    expiration_time = datetime_utc + timedelta(minutes=1)
+                    payload = {'session_id': v_session_id, 'user_id': v_user_id, 'exp': expiration_time}
+                    token = jwt.encode(payload, app_main.secret_key, algorithm = 'HS256')                                                          
 
-                url_next = config_urlParam(request.args.get('next'), 'token', token)
-                
-                return redirect(url_next)
+                    url_next = config_urlParam(request.args.get('next'), 'token', token)
+                    
+                    return redirect(url_next)
 
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': 'S404', 'msg': 'Page not found.'}), 404
@@ -200,7 +200,7 @@ def main_setCookie():
         if 'theme' not in request.cookies:
             expiration_date = datetime.now() + timedelta(days=36500)
 
-            response = make_response(redirect(request.path))
+            response = make_response(redirect(request.full_path))
             response.set_cookie('theme', 'white', expires=expiration_date)
             return response
     except Exception as e:

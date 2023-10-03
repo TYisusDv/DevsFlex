@@ -33,6 +33,12 @@ config_routes_nocache = [
     '/auth/logout'
 ]
 
+config_routes_restaurant = [
+    '',
+    'dashboard',
+    'manage/users',
+]
+
 def config_splitList(s, text, n):
     try:
         return text.split(s)[n] if len(text.split(s)) > n else None
@@ -77,3 +83,11 @@ def config_urlParam(url, param, value):
         (parsed_url.scheme, parsed_url.netloc, parsed_url.path, parsed_url.params, new_query, parsed_url.fragment)
     )
     return new_url
+
+def config_searchRegex(search = None):
+    if search:
+        words = search.split()
+        query_regex = ".*" + ".*".join(words) + ".*"
+        return query_regex
+    else:
+        return ''

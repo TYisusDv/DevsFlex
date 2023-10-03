@@ -7,12 +7,28 @@
     <link rel="stylesheet" href="/assets/vendor/animate.min.css"></style>
     <link rel="stylesheet" href="/assets/css/panel.css"></style>
     <link rel="stylesheet" href="/assets/vendor/fontawesome-free-6.4.0-web/css/all.min.css"></style>
+    <link rel="stylesheet" href="/assets/css/sizes.css"></style>
+    <link rel="stylesheet" href="/assets/css/datatables.css"></style>
 </head>
 <body>
+    <div id="preolader-content" style="display: none;">
+        <div class="preloader">
+            <div class="content">
+                <div class="title"></div>
+                <div class="path"></div>
+            </div> 
+            <div class="content">
+                <div class="info"></div>
+                <div class="info"></div>
+                <div class="info"></div>
+                <div class="table"></div>
+            </div>        
+        </div>
+    </div>
     <nav class="navbar">
         <div class="content">
             <i class="btn fa-solid fa-bars active"></i>            
-            <a class="name" href="/"><h1>DevsFlex</h1> <span>RESTAURANT</span></a>
+            <a class="name" href="/dashboard"><h1>DevsFlex</h1> <span>RESTAURANT</span></a>
             <div class="user">
                 <div class="info">
                     <p>Jesus Navarro</p>
@@ -33,61 +49,26 @@
         <div class="content">
             <ul class="menu">
                 <li class="name"><span>Navegación</span></li>
-                <li><a href=""><i class="fa-solid fa-home"></i> <span>Inicio</span></a></li>
+                <li><a href="/dashboard"><i class="fa-solid fa-home"></i> <span>Inicio</span></a></li>
                 <li class="name"><span>Administración</span></li>
-                <li><a href=""><i class="fa-solid fa-chart-line"></i> <span>Estadisticas</span></a></li>
-                <li><a href=""><i class="fa-solid fa-user"></i> <span>Usuarios</span></a></li>
-                <li><a href=""><i class="fa-solid fa-user-tie"></i> <span>Clientes</span></a></li>
-                <li><a href=""><i class="fa-solid fa-map-location-dot"></i> <span>Sucursales y almacenes</span></a></li>
-                <li><a href=""><i class="fa-solid fa-barcode"></i> <span>Productos</span></a></li>
-                <li><a href=""><i class="fa-solid fa-industry"></i> <span>Proveedores</span></a></li>
-                <li><a href=""><i class="fa-solid fa-file-invoice-dollar"></i> <span>Ventas</span></a></li>
-                <li class="name"><span>Ayuda</span></li>
-                <li><a href=""><i class="fa-solid fa-circle-info"></i> <span>Información</span></a></li>
-                <li><a href=""><i class="fa-solid fa-user-lock"></i> <span>Política de privacidad</span></a></li>
-                <li><a href=""><i class="fa-solid fa-triangle-exclamation"></i> <span>Términos y condiciones</span></a></li>
-                <li><a href=""><i class="fa-solid fa-cookie"></i> <span>Política de cookies</span></a></li>                
-            </ul>
-            <p class="footer">© 2023 DevsFlex. Reservados todos los derechos.</p>
+                <li><a href="/manage/users"><i class="fa-solid fa-users"></i> <span>Usuarios</span></a></li>            
+            </ul>            
         </div>
     </nav>
-    <section class="main-content active">
-        <div class="preloader">
-            <div class="content">
-                <div class="title"></div>
-                <div class="path"></div>
-            </div> 
-            <div class="content">
-                <div class="info"></div>
-                <div class="info"></div>
-                <div class="info"></div>
-                <div class="table"></div>
-            </div>        
-        </div>
+    <section class="main-content active" id="content">
+        
     </section>
+    <p class="footer">© 2023 DevsFlex. Reservados todos los derechos.</p>
     <script src="/assets/js/jquery-3.7.0.min.js"></script>
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/datatables.min.js"></script>
     <script>
         $(document).ready(function() {
-            var main_screenSmall = $(window).width() <= 1023;
-            $(".navbar-menu .content ul li a span").fadeToggle(50);
-            
-            if (!main_screenSmall) {
-                $(".navbar .content .btn").toggleClass("active");                
-                $(".navbar-menu").toggleClass("active");
-                $(".main-content").toggleClass("active");
-            }
-            
-            $(window).on("resize", function(){
-                main_screenSmall = $(window).width() <= 1023;
-            });
-
             $(document).on("click", ".navbar .content .btn", function(){
                 $(this).toggleClass("active");
-                if (!main_screenSmall) {
-                    $(".navbar-menu .content ul li a span").fadeToggle(50);
-                }
                 $(".navbar-menu").toggleClass("active");
                 $(".main-content").toggleClass("active");
+                $(".navbar-menu .content ul li a span").fadeToggle(50);
             });
 
             $(document).on("click", ".navbar .content .user", function(event) {

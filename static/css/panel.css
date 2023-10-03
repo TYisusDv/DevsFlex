@@ -87,7 +87,9 @@ button {
 .navbar {
     position: fixed;
     background: var(--bg-color);
-    width: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
     height: var(--navbar-height);
     border-bottom: 1px solid var(--bg-border);
     -webkit-user-select: none;
@@ -260,7 +262,8 @@ button {
 .navbar-menu {
     position: fixed;
     width: var(--navbar-menu-width);
-    height: 100vh;
+    top: var(--navbar-height);
+    bottom: 0;
     background: var(--bg-color);    
     border-right: 1px solid var(--bg-border);
     transition: width 0.5s, transform 0.5s;
@@ -278,7 +281,7 @@ button {
 .navbar-menu .content {
     width: 100%;
     height: 100%;
-    padding-top: calc(var(--navbar-height) + 10px);
+    padding-top: 10px;
 }
 
 .navbar-menu .content ul.menu {
@@ -297,6 +300,11 @@ button {
     white-space: nowrap;
 }
 
+.navbar-menu.active .content ul.menu li a {
+    justify-content: center;
+    padding: 10px 0px 10px 0px;
+}
+
 .navbar-menu.active .content ul.menu li.name {
     opacity: 0;
     padding: 0px 24px 0px 24px;
@@ -310,6 +318,7 @@ button {
     text-decoration: none;
     border-left: 3px solid transparent;
     font-size: 0.95em;
+    transition: justify-content 0.2s, padding 0.2s;
 }
 
 .navbar-menu .content ul.menu li a:hover {
@@ -330,31 +339,35 @@ button {
     display: none;
 }
 
-.navbar-menu .content p.footer {
-    position: absolute;
+p.footer {
+    display: flex;
+    justify-content: flex-end;
+    position: fixed;
+    width: 100%;
+    background: var(--bg-body);
     opacity: 1;
-    padding: 10px 24px 10px 24px;    
+    padding: 16px 20px 16px 20px;
     bottom: 0;
-    left: 0;   
+    left: 0;  
     font-size: 0.8em;
     color: var(--text-color);
-    text-align: justify;
-}
-
-.navbar-menu.active .content p.footer {
-    opacity: 0;
+    box-sizing: border-box;
+    border-top: 1px solid var(--bg-border);
 }
 
 .main-content {
-    width: 100%;
-    height: 100%;
-    padding: calc(var(--navbar-height) + 20px) 20px 20px calc(var(--navbar-menu-width) + 20px);
-    transition: padding 0.5s;
+    position: absolute;
+    top: var(--navbar-height);
+    left: var(--navbar-menu-width);
+    right: 0;
+    bottom: 50px;
+    padding: 20px;
+    transition: left 0.5s;
     box-sizing: border-box;
 }
 
 .main-content.active {
-    padding: calc(var(--navbar-height) + 20px) 20px 20px 90px;
+    left: var(--navbar-height);
 }
 
 .preloader {
@@ -399,6 +412,53 @@ button {
     animation: preLoader 1s ease-in-out infinite alternate;
 }
 
+.card-number {
+    display: flex;
+    border: 1px solid var(--bg-border);
+    width: 100%;
+    height: auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.card-number .number {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 50%;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.card-number .icon {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 50%;
+    font-size: 26px;
+}
+
+.card-number p {
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.web-routes {
+    display: flex;
+    list-style: none;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.table-responsive {
+    border: 1px solid var(--bg-border);
+    width: 100%;
+    padding: 20px;
+    overflow-x: auto;
+}
+
 /* ANIMATIONS */
 @keyframes preLoader {
     0% {
@@ -416,19 +476,17 @@ button {
 
 /* SMARTPHONE, TABLET */
 @media (max-width: 1023px) {
-    .navbar-menu.active {
-        width: var(--navbar-menu-width);
-        transform: translateX(calc(-1 * var(--navbar-menu-width)));
+    .main-content { 
+        left: 0;
     }
 
-    .navbar-menu.active .content ul.menu li.name {
-        opacity: 1;
-        padding: 18px 24px 6px 24px;
+    .main-content.active {
+        left: 0;
     }
-    
-    .main-content, .main-content.active {
-        padding: calc(var(--navbar-height) + 20px) 20px 20px 20px;
-    }  
+
+    .navbar-menu.active {
+        transform: translateX(-260px);
+    }
     
     .preloader .content .title {
         width: 50%;
