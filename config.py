@@ -36,7 +36,18 @@ config_routes_nocache = [
 config_routes_restaurant = [
     '',
     'dashboard',
+    'manage/orders',
+    'manage/order/types',
+    'manage/order/type/add',
+    'manage/order/type/edit',
+    'manage/customers',
+    'manage/products',
+    'manage/product/categories',
+    'manage/tables',
+    'manage/table/reservations',
     'manage/users',
+    'manage/user/add',
+    'manage/user/edit',
 ]
 
 def config_splitList(s, text, n):
@@ -91,3 +102,12 @@ def config_searchRegex(search = None):
         return query_regex
     else:
         return ''
+
+def config_convertDate(date):
+    format_entry = "%Y-%m-%d %H:%M:%S.%f"
+    format_fin = "%m/%d/%Y %H:%M:%S"
+    
+    date_object = datetime.strptime(str(date), format_entry)
+    date_converted = date_object.strftime(format_fin)
+    
+    return date_converted

@@ -1,11 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error 404</title>
-</head>
-<body>
-    
-</body>
-</html>
+<div id="tsparticles"></div>
+<div class="d-flex flex-direction-column w-100 h-100 align-items-center">
+    <h1 class="mt-20px" style="font-size: 50px;">{{code}}</h1>
+    <p style="font-weight: 500;">{{msg}}</p>
+    <img src="/assets/images/planet2.svg" alt="DevsFlex - Planet" class="mt-60px" width="210" height="210">
+    <img src="/assets/images/astronaut.webp" alt="DevsFlex - Astronaut" class="error-astronaut mt-30px" width="35" height="35">
+</div>
+<script>
+    $(document).ready(function() {
+        var particles = {
+            fpsLimit: 60,
+            particles: {
+                number: {
+                    value: 160,
+                    density: {
+                        enable: true,
+                        area: 800
+                    }
+                },
+                color: {
+                    value: "#204ecf"
+                },
+                shape: {
+                    type: "circle"
+                },
+                opacity: {
+                    value: 1,
+                    random: {
+                        enable: true,
+                        minimumValue: 0.1
+                    },
+                    animation: {
+                        enable: true,
+                        speed: 1,
+                        minimumValue: 0,
+                        sync: false
+                    }
+                },
+                size: {
+                    value: 3,
+                    random: {
+                        enable: true,
+                        minimumValue: 1
+                    }
+                },
+                move: {
+                    enable: true,
+                    speed: 0.17,
+                    direction: "none",
+                    random: true,
+                    straight: false,
+                    outModes: {
+                        default: "out"
+                    },
+                }
+            },
+            interactivity: {
+                detectsOn: "canvas",
+                events: {
+                    resize: false
+                }
+            },
+            detectRetina: true
+        };
+        tsParticles.load("tsparticles", particles);
+    });
+</script>

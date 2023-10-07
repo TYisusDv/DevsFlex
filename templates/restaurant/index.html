@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevsFlex - Panel</title>
+    <title>DevsFlex - Restaurant</title>
     <link rel="stylesheet" href="/assets/vendor/animate.min.css"></style>
     <link rel="stylesheet" href="/assets/css/panel.css"></style>
     <link rel="stylesheet" href="/assets/vendor/fontawesome-free-6.4.0-web/css/all.min.css"></style>
@@ -11,6 +11,11 @@
     <link rel="stylesheet" href="/assets/css/datatables.css"></style>
 </head>
 <body>
+    <div id="preolader-circle" style="display: none;">
+        <div class="preloader-circle">
+            <span class="loader-circle"></span>
+        </div>
+    </div>    
     <div id="preolader-content" style="display: none;">
         <div class="preloader">
             <div class="content">
@@ -39,7 +44,7 @@
                         <li><a href=""><i class="fa-solid fa-circle-user"></i> Cuenta</a></li>
                         <li><a href=""><i class="fa-regular fa-user"></i> Cuenta</a></li>
                         <li class="separate"></li>
-                        <li><a href="/auth/logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesion</a></li>
+                        <li><a href="/auth/logout" type="_blank"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesion</a></li>
                     </ul>
                 </div>
             </div>
@@ -50,8 +55,19 @@
             <ul class="menu">
                 <li class="name"><span>Navegación</span></li>
                 <li><a href="/dashboard"><i class="fa-solid fa-home"></i> <span>Inicio</span></a></li>
+                <li class="name"><span>Cocineros</span></li>
+                <li><a href="/app/orders"><i class="fa-solid fa-receipt"></i> <span>Pedidos</span></a></li>
+                <li class="name"><span>Camareros</span></li>
+                <li><a href="/app/tables"><i class="fa-solid fa-utensils"></i> <span>Mesas</span></a></li>                
                 <li class="name"><span>Administración</span></li>
-                <li><a href="/manage/users"><i class="fa-solid fa-users"></i> <span>Usuarios</span></a></li>            
+                <li><a href="/manage/orders"><i class="fa-solid fa-receipt"></i> <span>Pedidos</span></a></li>
+                <li><a href="/manage/order/types"><i class="fa-solid fa-timeline"></i> <span>Tipos de pedido</span></a></li>
+                <li><a href="/manage/customers"><i class="fa-solid fa-user-group"></i> <span>Clientes</span></a></li>
+                <li><a href="/manage/products"><i class="fa-solid fa-mug-saucer"></i> <span>Productos</span></a></li>
+                <li><a href="/manage/product/categories"><i class="fa-solid fa-sitemap"></i> <span>Categorías de producto</span></a></li>   
+                <li><a href="/manage/tables"><i class="fa-solid fa-utensils"></i> <span>Mesas</span></a></li>
+                <li><a href="/manage/table/reservations"><i class="fa-solid fa-person-chalkboard"></i> <span>Reservaciones</span></a></li>
+                <li><a href="/manage/users"><i class="fa-solid fa-users"></i> <span>Usuarios</span></a></li>                
             </ul>            
         </div>
     </nav>
@@ -62,8 +78,11 @@
     <script src="/assets/js/jquery-3.7.0.min.js"></script>
     <script src="/assets/js/api.js"></script>
     <script src="/assets/js/datatables.min.js"></script>
+    <script type="text/javascript" src="/assets/js/tsparticles.bundle.min.js"></script>
     <script>
-        $(document).ready(function() {
+        var screenWidth = $(window).width();
+
+        $(document).ready(function() {           
             $(document).on("click", ".navbar .content .btn", function(){
                 $(this).toggleClass("active");
                 $(".navbar-menu").toggleClass("active");
@@ -88,6 +107,8 @@
                 }
                 event.stopPropagation();
             });
+
+            api_displayDeviceInfo();
         });        
 
         function api_openDropdown($dropdown) {
@@ -101,6 +122,15 @@
             $dropdown.removeClass("animate__fadeInRight");
             $dropdown.addClass("animate__fadeOutRight");
             $dropdown.removeClass("active");
+        }
+
+        function api_displayDeviceInfo() {
+            if (screenWidth > 1023) {
+                $(".navbar .content .btn").toggleClass("active");
+                $(".navbar-menu").toggleClass("active");
+                $(".main-content").toggleClass("active");
+                $(".navbar-menu .content ul li a span").fadeToggle(50);
+            }
         }
     </script>
 </body>

@@ -46,11 +46,12 @@ def main_web(path):
         v_config_splitList = [config_splitList('/', path, i) for i in range(10)]
 
         v_requestForm = request.form
+        v_requestArgs = request.args
         v_sessionVerify =  main_sessionVerify()
         v_session_id = session.get('session_id')
         v_user_id = session.get('user_id')
         v_action = v_requestForm.get('action')
-        v_action_param = request.args.get('action')
+        v_action_param = v_requestArgs.get('action')
         datetime_utc = datetime.utcnow()
         datetime_now = datetime.now()
 
@@ -115,29 +116,79 @@ def main_web(path):
                 if v_action == 'manage_users':
                     data = model_restaurant_users.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
                     for item in data:
-                        item['actions'] = ''
+                        item['actions'] = f'<div class="table-actions"><a href="/manage/user/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+                        item['user_role']['name'] = f'<span class="badge bg-primary">{item["user_role"]["name"]}</span>'
+                        item['regdate'] = f'<span class="badge bg-primary">{config_convertDate(item["regdate"])}</span>'
                         
                     data_count = model_restaurant_users.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                elif v_action == 'manage_order_types':
+                    data = model_order_types.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['actions'] = f'<div class="table-actions"><a href="/manage/order/type/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item['status'] else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
+                        
+                    data_count = model_order_types.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
 
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
+            elif request.method == 'GET' and path == 'api/web/widget/manage/order/types':
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/order_types.html')})    
+            elif request.method == 'POST' and path == 'api/web/data/manage/order/types':
+                if v_action == 'add':
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
+                    
+                    insert = model_order_types.insert(action = 'one', name = name)
+                    if not insert:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
+                elif v_action == 'edit':
+                    order_type_id = v_requestForm.get('id')
+                    item = model_order_types.get(action = 'one', order_type_id = int(order_type_id) if order_type_id and order_type_id.isnumeric() else None)
+                    if not item:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
+
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
+                
+                    status = v_requestForm.get('status')
+                    if not status:
+                        status = 'off'
+                    
+                    status = True if status == 'on' else False
+                    update = model_order_types.update(action = 'one', order_type_id = int(order_type_id), name = name, status = status)
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se editó correctamente. Redireccionando...'})                
+            elif request.method == 'GET' and path == 'api/web/widget/manage/order/type/add':
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/order_types/add.html')})    
+            elif request.method == 'GET' and path == 'api/web/widget/manage/order/type/edit':
+                order_type_id = v_requestArgs.get('id')
+                item = model_order_types.get(action = 'one', order_type_id = int(order_type_id) if order_type_id and order_type_id.isnumeric() else None)
+                if item:
+                    return jsonify({'success': True, 'html': render_template('/restaurant/manage/order_types/edit.html', item = item)})    
             elif request.method == 'GET' and path == 'api/web/widget/manage/users':
-                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users.html')})
-            
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users.html')})    
+            elif request.method == 'GET' and path == 'api/web/widget/manage/user/add':
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users/add.html')})    
 
         if request.method == 'POST' and v_config_splitList[0] == 'api':
-            return jsonify({'success': True, 'code': 'S404', 'msg': 'Page not found.'}), 404
+            return jsonify({'success': True, 'code': 'S404', 'msg': 'Página no encontrada.'}), 404
         elif request.method == 'GET' and v_config_splitList[0] == 'api':
-            return jsonify({'success': True, 'html': render_template('/error.html', code = '404', msg = 'Page not found.')}), 404
+            return jsonify({'success': True, 'html': render_template('/restaurant/error.html', code = '404', msg = 'Página no encontrada.')}), 404
 
-        return render_template('/restaurant/error.html', code = '404', msg = 'Page not found.'), 404
+        return render_template('/error.html', code = '404', msg = 'Página no encontrada.'), 404
     except Exception as e:
+        print(e)
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'}), 500
         elif request.method == 'GET' and v_config_splitList[0] == 'api':
-            return jsonify({'success': True, 'html': render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.')}), 500
+            return jsonify({'success': True, 'html': render_template('/restaurant/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.')}), 500
         
-        #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
-        return render_template('/restaurant/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
+        return render_template('/error.html', code = '500', msg = f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'), 500
 
 @app_restaurant.before_request
 def main_setCookie():
@@ -181,9 +232,9 @@ def main_error_403(e):
 @app_restaurant.errorhandler(404)
 def main_error_404(e):
     if request.method == 'POST':
-        return jsonify({'success': False, 'code': 'S404', 'msg': 'Page not found.'}), 404
+        return jsonify({'success': False, 'code': 'S404', 'msg': 'Página no encontrada.'}), 404
     
-    return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
+    return render_template('/error.html', code = '404', msg = 'Página no encontrada.'), 404
 
 @app_restaurant.errorhandler(405)
 def main_error_405(e):

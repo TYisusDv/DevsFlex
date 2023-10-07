@@ -56,6 +56,7 @@
 
 :root {
     --primary: 32, 78, 207;
+    --primary-hover: #1f4bc5dc;
     --bg-body: 255, 255, 255;
     --navbar-height: 65px;
     --text-color: #000000;
@@ -70,6 +71,10 @@
 
 .d-flex {
     display: flex;
+}
+
+.bg-primary {
+    background: rgba(var(--primary));
 }
 
 .navbar {
@@ -185,4 +190,48 @@
 
 .app .section-description .description .image .img {    
     width: 100%;
+}
+
+.btn {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    border-radius: 8px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    padding: 10px;
+    text-decoration: none;
+    font-size: 15px;
+    cursor: pointer;
+    gap: 5px;
+    z-index: 1000;
+}
+
+.btn-sm {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    border-radius: 8px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    padding: 6px;
+    text-decoration: none;
+    font-size: 15px;
+    cursor: pointer;
+    gap: 5px;
+    z-index: 1000;
+}
+
+.btn.bg-primary span, .btn-sm.bg-primary span, .btn.bg-primary i, .btn-sm.bg-primary i {
+    font-size: 15px;
+    color: white !important;
+    font-weight: 600;
+}
+
+.btn.bg-primary:hover, .btn-sm.bg-primary:hover {
+    background: var(--primary-hover);
 }

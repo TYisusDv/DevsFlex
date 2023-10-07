@@ -78,10 +78,14 @@ def main_web(path):
             return render_template('/panel/index.html')
         
         if v_sessionVerify == 0:
-            if request.method == 'GET' and path == 'api/web/widget/auth/sign-in':
-                return jsonify({'success': True, 'html': render_template('/auth/sign-in.html')})
-            elif request.method == 'GET' and path == 'api/web/widget/auth/sign-up':
-                return jsonify({'success': True, 'html': render_template('/auth/sign-up.html')})
+            if request.method == 'GET' and path == 'api/web/data/auth':
+                if v_action_param == 'token':
+                    url_next = config_app['url_main'] + '/auth/sign-in'
+
+                    if request.args.get('next') and config_isValidURL(request.args.get('next')):
+                        url_next = config_urlParam(url_next, 'next', request.url)
+
+                    return redirect(url_next)
             elif request.method == 'POST' and path == 'api/web/data/auth':
                 if v_action == 'sign-up':
                     name = v_requestForm.get('name')
@@ -156,25 +160,20 @@ def main_web(path):
                     session["user_id"] = email_verify['_id']
                     session["session_id"] = session_id
                     return jsonify({'success': True, 'msg': 'Inicio de sesión correcto. ¡Bienvenido/a! Redireccionando...'})
-            elif request.method == 'GET' and path == 'api/web/data/auth':
-                if v_action_param == 'token':
-                    url_next = config_app['url_main'] + '/auth/sign-in'
-
-                    if request.args.get('next') and config_isValidURL(request.args.get('next')):
-                        url_next = config_urlParam(url_next, 'next', request.url)
-
-                    return redirect(url_next)
-        
+            elif request.method == 'GET' and path == 'api/web/widget/auth/sign-in':
+                return jsonify({'success': True, 'html': render_template('/auth/sign-in.html')})
+            elif request.method == 'GET' and path == 'api/web/widget/auth/sign-up':
+                return jsonify({'success': True, 'html': render_template('/auth/sign-up.html')})
+            
         elif v_sessionVerify == 1:
             if request.method == 'GET' and path == 'api/web/data/auth':
                 if v_action_param == 'token':
                     if not request.args.get('next') or not config_isValidURL(request.args.get('next')):
                         return redirect('/')
                             
-                    expiration_time = datetime_utc + timedelta(minutes=1)
+                    expiration_time = datetime_utc + timedelta(minutes = 1)
                     payload = {'session_id': v_session_id, 'user_id': v_user_id, 'exp': expiration_time}
                     token = jwt.encode(payload, app_main.secret_key, algorithm = 'HS256')                                                          
-
                     url_next = config_urlParam(request.args.get('next'), 'token', token)
                     
                     return redirect(url_next)

@@ -2,13 +2,14 @@ var api_path = window.location.pathname;
 var api_pathSearch = window.location.search;
 var api_load = false;
 var api_CSRFToken = null;
+var alertTimer;
 
 $(document).ready(function () {
     if (api_path == "/") {
-        api_path = `/dashboard${api_pathSearch}`;
+        api_path = `/dashboard`;
     }
 
-    api_loadWidget(api_path);
+    api_loadWidget(api_path + api_pathSearch);
 
     $(document).on("click", ".alert .close", function (event) {
         $(".alert").fadeOut(300, function() {
@@ -80,14 +81,15 @@ function api_getCSRFToken(callback) {
 function api_loadWidget(path) {
     if (!api_load) {
         api_path = path;
-        api_pathSearch = window.location.search;
-        history.pushState(null, null, api_path + api_pathSearch);
+        history.pushState(null, null, api_path);
         api_setWidget({});
     }
 }
 
 function api_setWidget({id = "#content", url = `widget${api_path}`, type = "GET"}) {
     if (!api_load) {
+        api_classActive();
+        
         api_load = true;
         $("html, body").animate({ scrollTop: 0 }, "slow");
 
@@ -103,6 +105,9 @@ function api_setWidget({id = "#content", url = `widget${api_path}`, type = "GET"
                 });
                 api_load = false;                
             }).catch(function (response) {
+                $(id).fadeOut(400, function () {
+                    $(this).html(response.responseJSON.html).fadeIn(400);
+                });
                 api_load = false;
             });
         }, 1000);
@@ -144,6 +149,54 @@ function api_loadloader(element, html, delement, disabled, timeOut, timeIn){
 }
 
 function api_alert({type = "danger", title = "¡Ocurrió un error!", text = ""}){
-    $(".alert").remove();    
+    $(".alert").remove();  
+    clearTimeout(alertTimer);
+    alertTimer = setTimeout(function(){
+        $(".alert").remove();  
+    }, 5000);  
     return `<div class="alert alert-${type}"><div class="body"><span>${title}</span> ${text}</div><div class="close"><i class="fa-solid fa-xmark"></i></div></div>`;
+}
+
+function api_classActive(){
+    api_path = window.location.pathname;
+
+    $(".menu li a").each(function() {
+        var url = $(this).attr("href");
+        var liElement = $(this).parent();
+
+        if (url === api_path) {
+            liElement.addClass("active");
+        } else {
+            liElement.removeClass("active");
+        }
+    });      
+}
+
+function api_dataTable(id, action, columns){
+    var table = $(id).DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "/api/web/data/table",
+            type: "POST",
+            data: function (d) {
+                d.start = d.start || 0;
+                d.length = d.length;
+                d.action = action;
+                d.search = d.search.value || "";
+                d.order_column = d.columns[d.order[0].column].data;
+                d.order_direction = d.order[0].dir;
+            },
+            beforeSend: function (xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                    xhr.setRequestHeader("X-CSRFToken", api_CSRFToken);
+                }
+            }
+        },
+        columns: columns,
+        searching: true,
+        ordering: true
+    });
+
+    return table;
 }

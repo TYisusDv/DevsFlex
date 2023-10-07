@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevsFlex</title>
+    <link rel="stylesheet" href="/assets/vendor/animate.min.css"></style>
+    <link rel="stylesheet" href="/assets/css/styles.css"></style>
+    <link rel="stylesheet" href="/assets/vendor/fontawesome-free-6.4.0-web/css/all.min.css"></style>
+    <link rel="stylesheet" href="/assets/css/sizes.css"></style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo" style="color: white;">
+                DevsFlex
+            </a>
+        </div>
+    </nav>
+    <div id="tsparticles"></div>
+    <div class="d-flex w-100 h-100vh align-items-center flex-direction-column" style="padding-top: 60px; box-sizing: border-box; background: #0c1b33;">
+        <h1 class="mt-20px" style="font-size: 50px; color: white;">{{code}}</h1>
+        <p style="font-weight: 500; color: white;">{{msg}}</p>
+        <img src="/assets/images/planet2.svg" alt="DevsFlex - Planet" class="mt-60px" width="210" height="210">
+        <img src="/assets/images/astronaut.webp" alt="DevsFlex - Astronaut" class="error-astronaut mt-30px" width="35" height="35" style="top: 162px;">
+        <a href="/" class="btn bg-primary mt-30px"><i class="fa-solid fa-home"></i> <span>Inicio</span></a>
+    </div>
+    <script src="/assets/js/jquery-3.7.0.min.js"></script>
+    <script type="text/javascript" src="/assets/js/tsparticles.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var particles = {
+                fpsLimit: 60,
+                particles: {
+                    number: {
+                        value: 160,
+                        density: {
+                            enable: true,
+                            area: 800
+                        }
+                    },
+                    color: {
+                        value: "#bbbbbb"
+                    },
+                    shape: {
+                        type: "circle"
+                    },
+                    opacity: {
+                        value: 1,
+                        random: {
+                            enable: true,
+                            minimumValue: 0.1
+                        },
+                        animation: {
+                            enable: true,
+                            speed: 1,
+                            minimumValue: 0,
+                            sync: false
+                        }
+                    },
+                    size: {
+                        value: 3,
+                        random: {
+                            enable: true,
+                            minimumValue: 1
+                        }
+                    },
+                    move: {
+                        enable: true,
+                        speed: 0.17,
+                        direction: "none",
+                        random: true,
+                        straight: false,
+                        outModes: {
+                            default: "out"
+                        },
+                    }
+                },
+                interactivity: {
+                    detectsOn: "canvas",
+                    events: {
+                        resize: false
+                    }
+                },
+                detectRetina: true
+            };
+            tsParticles.load("tsparticles", particles);
+        });
+    </script>
+</body>
+</html>

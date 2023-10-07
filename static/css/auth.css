@@ -72,7 +72,7 @@
     padding: 0;
     margin: 0;
     color: var(--text-color-2);
-    font-family: 'VisbyRound', 'Roboto', sans-serif;
+    font-family: 'VisbyRound', 'Roboto', Arial, sans-serif;
 }
 
 body {
@@ -370,10 +370,16 @@ body[class='theme-dark'] {
     width: 100%;
     font-size: 0.95em;
     font-weight: 600;
+    
+}
+
+.main-content .box .card .form-input input[type="password"]{
+    font-family: 'Roboto', Arial, sans-serif;
 }
 
 .main-content .box .card .form-input input::placeholder {
     color: var(--text-color);
+    font-family: 'VisbyRound', 'Roboto', Arial, sans-serif;
 }
 
 .main-content .box .card .form-input input:active,

@@ -1,9 +1,10 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from pymongo.errors import DuplicateKeyError
 from config import *
 
 db_mongo_client = MongoClient('mongodb://localhost:27017/')
 db_mongo_main = db_mongo_client[config_app['db_mongo']['main']['name']]
+db_mongo_restaurant = db_mongo_client[config_app['db_mongo']['restaurant']['name']]
 
 class model_main_users:
     @staticmethod
@@ -85,7 +86,16 @@ class model_main_user_sessions:
             return False
         except Exception as e:
             return False
-        
+
+def model_restaurant_next_count(name):
+    result = db_mongo_restaurant.counters.find_one_and_update(
+        {'_id': name},
+        {'$inc': {'seq': 1}},
+        upsert = True,
+        return_document = ReturnDocument.AFTER
+    )
+    return result['seq']      
+
 class model_restaurant_users:
     @staticmethod
     def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc'):
@@ -101,7 +111,8 @@ class model_restaurant_users:
                             {'email': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
-                            {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}}
+                            {'user_person.phone': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
                         ]
                     }
                 },
@@ -124,6 +135,7 @@ class model_restaurant_users:
                             {'email': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'user_person.phone': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}}
                         ]
                     }
@@ -137,3 +149,83 @@ class model_restaurant_users:
             return count        
 
         return None
+
+class model_order_types:
+    @staticmethod
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', order_type_id = None):
+        if action == 'one':            
+            data = db_mongo_restaurant.order_types.find_one({'_id': order_type_id})
+            return data
+        elif action == 'all_table':
+            pipeline = [
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'name': {'$regex': config_searchRegex(search), '$options': 'i'}}
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$skip': start},
+                {'$limit': length}
+            ]
+
+            data = list(db_mongo_restaurant.order_types.aggregate(pipeline))
+            return data
+        elif action == 'all_table_count':
+            pipeline = [
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'name': {'$regex': config_searchRegex(search), '$options': 'i'}}
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.order_types.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count        
+
+        return None
+
+    @staticmethod
+    def insert(action = None, name = None):
+        try:
+            if action == 'one':
+                document = {
+                    '_id': model_restaurant_next_count('order_type'),
+                    'name': name,
+                    'status': False
+                }
+
+                db_mongo_restaurant.order_types.insert_one(document)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+        
+    @staticmethod
+    def update(action = None, order_type_id = None, name = None, status = False):
+        try:
+            if action == 'one':
+                document = {'_id': order_type_id} 
+
+                update = {
+                    '$set': {
+                        'name': name,
+                        'status': status,
+                    }
+                }
+
+                db_mongo_restaurant.order_types.update_one(document, update)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
