@@ -265,4 +265,4 @@ def main_error_505(e):
     return render_template('/error.html', code = '404', msg = 'HTTP Version not supported.'), 505
 
 if __name__ == '__main__':
-    app_restaurant.run(host = 'restaurant.localhost', debug = config_app['debug'], port = 5001)
+    app_restaurant.run(host = '127.0.0.2', debug = config_app['debug'], port = 5001)

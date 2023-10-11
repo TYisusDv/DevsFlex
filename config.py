@@ -19,8 +19,8 @@ config_app = {
             'name': 'devsflex_restaurant'
         }
     },
-    'url_main': 'http://localhost:5000',
-    'url_restaurant': 'http://restaurant.localhost:5001'
+    'url_main': 'http://127.0.0.1:5000',
+    'url_restaurant': 'http://127.0.0.2:5001'
 }
 
 if config_hostname == 'jesus-linux':

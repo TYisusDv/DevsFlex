@@ -185,6 +185,7 @@ def main_web(path):
 
         return render_template('/error.html', code = '404', msg = 'Page not found.'), 404
     except Exception as e:
+        print(e)
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': f'S500C{sys.exc_info()[-1].tb_lineno}', 'msg': f'[S500C{sys.exc_info()[-1].tb_lineno}] An error occurred! The bug has been successfully reported and we will be working to fix it.'}), 500
         elif request.method == 'GET' and v_config_splitList[0] == 'api':
@@ -268,4 +269,4 @@ def main_error_505(e):
     return render_template('/error.html', code = '404', msg = 'HTTP Version not supported.'), 505
 
 if __name__ == '__main__':
-    app_main.run(host = 'localhost', debug = config_app['debug'], port = 5000)
+    app_main.run(host = '127.0.0.1', debug = config_app['debug'], port = 5000)
