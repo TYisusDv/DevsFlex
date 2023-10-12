@@ -116,26 +116,33 @@ def main_web(path):
                 data_count = 0 
 
                 if v_action == 'manage_order_types':
-                    data = model_order_types.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    data = model_restaurant_order_types.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
                     for item in data:
                         item['actions'] = f'<div class="table-actions"><a href="/manage/order/type/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
-                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item['status'] else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
+                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
                         
-                    data_count = model_order_types.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                    data_count = model_restaurant_order_types.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
                 elif v_action == 'manage_product_categories':
-                    data = model_product_categories.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    data = model_restaurant_product_categories.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
                     for item in data:
                         item['actions'] = f'<div class="table-actions"><a href="/manage/product/category/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
-                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item['status'] else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
+                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
                         
-                    data_count = model_product_categories.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                    data_count = model_restaurant_product_categories.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                elif v_action == 'manage_users':
+                    data = model_restaurant_users.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['actions'] = f'<div class="table-actions"><a href="/manage/user/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
+                        
+                    data_count = model_restaurant_users.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
 
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
             #ORDER TYPES
             elif request.method == 'GET' and path == 'api/web/widget/manage/order/types':
-                visible = model_order_types.get(action = 'count_status', status = True)
-                hidden = model_order_types.get(action = 'count_status', status = False)
+                visible = model_restaurant_order_types.get(action = 'count_status', status = True)
+                hidden = model_restaurant_order_types.get(action = 'count_status', status = False)
                 total = visible + hidden
 
                 return jsonify({'success': True, 'html': render_template('/restaurant/manage/order_types.html', total = total, visible = visible, hidden = hidden)})    
@@ -145,14 +152,14 @@ def main_web(path):
                     if not config_validateForm(form = name, min = 1):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
                     
-                    insert = model_order_types.insert(action = 'one', name = name)
+                    insert = model_restaurant_order_types.insert(action = 'one', name = name)
                     if not insert:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
                     return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
                 elif v_action == 'edit':
                     param_id = v_requestForm.get('id')
-                    item = model_order_types.get(action = 'one', order_type_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                    item = model_restaurant_order_types.get(action = 'one', order_type_id = int(param_id) if param_id and param_id.isnumeric() else None)
                     if not item:
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
 
@@ -165,7 +172,7 @@ def main_web(path):
                         status = 'off'
                     
                     status = True if status == 'on' else False
-                    update = model_order_types.update(action = 'one', order_type_id = int(param_id), name = name, status = status)
+                    update = model_restaurant_order_types.update(action = 'one', order_type_id = int(param_id), name = name, status = status)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -175,14 +182,14 @@ def main_web(path):
                 return jsonify({'success': True, 'html': render_template('/restaurant/manage/order_types/add.html')})    
             elif request.method == 'GET' and path == 'api/web/widget/manage/order/type/edit':
                 param_id = v_requestArgs.get('id')
-                item = model_order_types.get(action = 'one', order_type_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                item = model_restaurant_order_types.get(action = 'one', order_type_id = int(param_id) if param_id and param_id.isnumeric() else None)
                 if item:
                     return jsonify({'success': True, 'html': render_template('/restaurant/manage/order_types/edit.html', item = item)})    
             
             #PRODUCT CATEGORIES
             elif request.method == 'GET' and path == 'api/web/widget/manage/product/categories':
-                visible = model_product_categories.get(action = 'count_status', status = True)
-                hidden = model_product_categories.get(action = 'count_status', status = False)
+                visible = model_restaurant_product_categories.get(action = 'count_status', status = True)
+                hidden = model_restaurant_product_categories.get(action = 'count_status', status = False)
                 total = visible + hidden
                 return jsonify({'success': True, 'html': render_template('/restaurant/manage/product_categories.html', total = total, visible = visible, hidden = hidden)})    
             elif request.method == 'POST' and path == 'api/web/data/manage/product/categories':
@@ -191,14 +198,14 @@ def main_web(path):
                     if not config_validateForm(form = name, min = 1):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
                     
-                    insert = model_product_categories.insert(action = 'one', name = name)
+                    insert = model_restaurant_product_categories.insert(action = 'one', name = name)
                     if not insert:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
                     return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
                 elif v_action == 'edit':
                     param_id = v_requestForm.get('id')
-                    item = model_product_categories.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                    item = model_restaurant_product_categories.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
                     if not item:
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
 
@@ -211,7 +218,7 @@ def main_web(path):
                         status = 'off'
                     
                     status = True if status == 'on' else False
-                    update = model_product_categories.update(action = 'one', product_category_id = int(param_id), name = name, status = status)
+                    update = model_restaurant_product_categories.update(action = 'one', product_category_id = int(param_id), name = name, status = status)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -221,9 +228,55 @@ def main_web(path):
                 return jsonify({'success': True, 'html': render_template('/restaurant/manage/product_categories/add.html')})    
             elif request.method == 'GET' and path == 'api/web/widget/manage/product/category/edit':
                 param_id = v_requestArgs.get('id')
-                item = model_product_categories.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                item = model_restaurant_product_categories.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
                 if item:
                     return jsonify({'success': True, 'html': render_template('/restaurant/manage/product_categories/edit.html', item = item)})    
+            
+            #USERS
+            elif request.method == 'GET' and path == 'api/web/widget/manage/users':
+                visible = model_restaurant_users.get(action = 'count_status', status = True)
+                hidden = model_restaurant_users.get(action = 'count_status', status = False)
+                total = visible + hidden
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users.html', total = total, visible = visible, hidden = hidden)})    
+            elif request.method == 'POST' and path == 'api/web/data/manage/users':
+                if v_action == 'add':
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
+                    
+                    insert = model_restaurant_users.insert(action = 'one', name = name)
+                    if not insert:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
+                elif v_action == 'edit':
+                    param_id = v_requestForm.get('id')
+                    item = model_restaurant_users.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                    if not item:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
+
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
+                
+                    status = v_requestForm.get('status')
+                    if not status:
+                        status = 'off'
+                    
+                    status = True if status == 'on' else False
+                    update = model_restaurant_users.update(action = 'one', product_category_id = int(param_id), name = name, status = status)
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se editó correctamente. Redireccionando...'})                
+            #USERS ADD/EDIT
+            elif request.method == 'GET' and path == 'api/web/widget/manage/user/add':
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users/add.html')})    
+            elif request.method == 'GET' and path == 'api/web/widget/manage/user/edit':
+                param_id = v_requestArgs.get('id')
+                item = model_restaurant_users.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                if item:
+                    return jsonify({'success': True, 'html': render_template('/restaurant/manage/users/edit.html', item = item)})    
             
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': 'S404', 'msg': 'Página no encontrada.'}), 404

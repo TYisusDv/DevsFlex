@@ -98,7 +98,7 @@ class model_main_user_sessions:
 
 class model_restaurant_users:
     @staticmethod
-    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc'):
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', status = False):
         if action == 'all_table':
             pipeline = [
                 {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
@@ -147,10 +147,24 @@ class model_restaurant_users:
             data = list(db_mongo_main.users.aggregate(pipeline))          
             count = data[0]['total'] if data else 0 
             return count        
+        elif action == 'count_status':
+            pipeline = [
+                {
+                    '$match': {
+                        'status': status,
+                    }
+                },
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_main.users.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count        
 
         return None
+        return None
 
-class model_order_types:
+class model_restaurant_order_types:
     @staticmethod
     def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', order_type_id = None, status = False):
         if action == 'one':            
@@ -244,7 +258,7 @@ class model_order_types:
         except Exception as e:
             return False
 
-class model_product_categories:
+class model_restaurant_product_categories:
     @staticmethod
     def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', product_category_id = None, status = False):
         if action == 'one':            

@@ -43,6 +43,8 @@ config_routes_restaurant = [
     'manage/customers',
     'manage/products',
     'manage/product/categories',
+    'manage/product/category/add',
+    'manage/product/category/edit',
     'manage/tables',
     'manage/table/reservations',
     'manage/users',
