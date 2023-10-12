@@ -9,7 +9,7 @@ app_restaurant.secret_key = 'Secret_key_DevsFlex_1#9$0&2@'
 
 csrf = CSRFProtect()
 csrf.init_app(app_restaurant)
-cache = Cache(app_restaurant)
+#cache = Cache(app_restaurant)
 
 def main_sessionVerify():
     #0 = No Logged

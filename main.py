@@ -9,7 +9,7 @@ app_main.secret_key = 'Secret_key_DevsFlex_1#9$0&2@'
 
 csrf = CSRFProtect()
 csrf.init_app(app_main)
-cache = Cache(app_main)
+#cache = Cache(app_main)
 
 def main_sessionVerify():
     #0 = No Logged
