@@ -1,12 +1,12 @@
 <div class="d-flex flex-direction-column w-100 align-items-center"> 
     <div class="d-flex-w-60 g-20 no-wrap justify-content-space-between align-items-baseline">
-        <h1 class="mb-20px">Administración de tipos de pedido</h1>
+        <h1 class="mb-20px">Administración de categorías de producto</h1>
         <ul class="web-routes">
             <li>Administrar</li>
             <li>/</li>
-            <li>Pedido</li>
+            <li>Producto</li>
             <li>/</li>
-            <li>Tipos</li>
+            <li>Categoría</li>
             <li>/</li>
             <li>Editar</li>
         </ul>
@@ -50,7 +50,7 @@
         formData.append("action", "edit")
         formData.append("id", "{{item._id}}")
         
-        var response = api_sendData({url: "data/manage/order/types", type: "POST", formData: formData});
+        var response = api_sendData({url: "data/manage/product/categories", type: "POST", formData: formData});
         setTimeout(function(){
             response.then(function (response) {
                 if(!response.success){
@@ -61,7 +61,7 @@
                 
                 $("#form-add").find(".body").prepend(api_alert({type: "primary", title: "¡Exito!", text: response.msg}));
                 setTimeout(function(){    
-                    api_loadWidget('/manage/order/types')
+                    api_loadWidget('/manage/product/categories')
                 }, 2000);
                 return;
             }).catch(function (response) {

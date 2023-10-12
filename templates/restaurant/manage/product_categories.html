@@ -1,11 +1,11 @@
 <div class="d-flex no-wrap g-20 justify-content-space-between align-items-baseline">
-    <h1 class="mb-20px">Administración de tipos de pedido</h1>
+    <h1 class="mb-20px">Administración de categorías de producto</h1>
     <ul class="web-routes">
         <li>Administrar</li>
         <li>/</li>
-        <li>Pedido</li>
+        <li>Producto</li>
         <li>/</li>
-        <li>Tipos</li>
+        <li>Categorías</li>
     </ul>
 </div>
 <div class="d-flex g-20">
@@ -15,7 +15,7 @@
                 {{total}}
             </div>
             <div class="icon">
-                <i class="fa-solid fa-timeline"></i>
+                <i class="fa-solid fa-sitemap"></i>
             </div>
             <div class="col-12 pt-10px">
                 <p>TOTAL</p>
@@ -50,7 +50,7 @@
     </div>
 </div>
 <div class="d-flex mt-20px justify-content-flex-end">
-    <a href="/manage/order/type/add" class="btn bg-primary"><i class="fa-solid fa-plus mr-5px"></i> Agregar</a>
+    <a href="/manage/product/category/add" class="btn bg-primary"><i class="fa-solid fa-plus mr-5px"></i> Agregar</a>
 </div>
 <div class="d-flex mt-10px">
     <div class="table-responsive">
@@ -71,7 +71,7 @@
     $(document).ready(function() {
         var table = api_dataTable(
             "#myTable",
-            "manage_order_types", 
+            "manage_product_categories", 
             [
                 {data: "actions"},
                 {data: "name"},
