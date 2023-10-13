@@ -17,16 +17,28 @@
             <form id="form-add" autocomplete="off"> 
                 <div class="body">
                     <div class="form-input">
-                        <i class="fa-solid fa-align-justify"></i>
-                        <input type="text" name="name" placeholder="Nombre" value="{{item.name}}">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" name="email" placeholder="Correo electrónico" value="{{item.email}}">
                     </div>
+                    <div class="form-input">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" name="name" placeholder="Nombre" value="{{item.user_person.name}}">
+                    </div>
+                    <div class="form-input">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" name="surname" placeholder="Apellido" value="{{item.user_person.surname}}">
+                    </div> 
+                    <div class="form-input">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" name="password" placeholder="Contraseña   (Dejalo vacio si no quieres cambiar)">
+                    </div>     
                     <div class="form-input">
                         <i class="fa-solid fa-eye"></i>
                         <label class="switch">
                             <input type="checkbox" name="status" {% if item.status %}checked{% endif %}>
                             <span class="slider"></span>
                         </label> 
-                    </div>                                   
+                    </div>                                  
                 </div>
                 <div class="footer">
                     <button type="submit" class="btn bg-outline-primary"><span><i class="fa-solid fa-save"></i> Guardar</span></button>

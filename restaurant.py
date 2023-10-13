@@ -130,12 +130,14 @@ def main_web(path):
                         
                     data_count = model_restaurant_product_categories.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
                 elif v_action == 'manage_users':
-                    data = model_restaurant_users.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    data = model_main_users.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
                     for item in data:
                         item['actions'] = f'<div class="table-actions"><a href="/manage/user/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
-                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
+                        item['email'] = f'<span class="badge bg-primary">{item["email"]}</span>'
+                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Activo/a</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Baneado/a</span>'
+                        item['regdate'] = f'<span class="badge bg-primary">{config_convertDate(item["regdate"])}</span>'
                         
-                    data_count = model_restaurant_users.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                    data_count = model_main_users.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
 
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
@@ -152,7 +154,7 @@ def main_web(path):
                     if not config_validateForm(form = name, min = 1):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
                     
-                    insert = model_restaurant_order_types.insert(action = 'one', name = name)
+                    insert = model_restaurant_order_types.insert(action = 'one', name = html.escape(name))
                     if not insert:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -172,7 +174,7 @@ def main_web(path):
                         status = 'off'
                     
                     status = True if status == 'on' else False
-                    update = model_restaurant_order_types.update(action = 'one', order_type_id = int(param_id), name = name, status = status)
+                    update = model_restaurant_order_types.update(action = 'one', order_type_id = int(param_id), name = html.escape(name), status = status)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -198,7 +200,7 @@ def main_web(path):
                     if not config_validateForm(form = name, min = 1):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
                     
-                    insert = model_restaurant_product_categories.insert(action = 'one', name = name)
+                    insert = model_restaurant_product_categories.insert(action = 'one', name = html.escape(name))
                     if not insert:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -218,7 +220,7 @@ def main_web(path):
                         status = 'off'
                     
                     status = True if status == 'on' else False
-                    update = model_restaurant_product_categories.update(action = 'one', product_category_id = int(param_id), name = name, status = status)
+                    update = model_restaurant_product_categories.update(action = 'one', product_category_id = int(param_id), name = html.escape(name), status = status)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -234,37 +236,96 @@ def main_web(path):
             
             #USERS
             elif request.method == 'GET' and path == 'api/web/widget/manage/users':
-                visible = model_restaurant_users.get(action = 'count_status', status = True)
-                hidden = model_restaurant_users.get(action = 'count_status', status = False)
-                total = visible + hidden
-                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users.html', total = total, visible = visible, hidden = hidden)})    
+                actives = model_main_users.get(action = 'count_status', status = True)
+                banned = model_main_users.get(action = 'count_status', status = False)
+                total = actives + banned
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/users.html', total = total, actives = actives, banned = banned)})    
             elif request.method == 'POST' and path == 'api/web/data/manage/users':
-                if v_action == 'add':
+                if v_action == 'add':                    
                     name = v_requestForm.get('name')
-                    if not config_validateForm(form = name, min = 1):
-                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'}) 
+                    if not config_validateForm(form = name, min = 1) or not config_verifyText(name):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un nombre válido e inténtelo de nuevo.'})
+
+                    surname = v_requestForm.get('surname')
+                    if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
+
+                    email = v_requestForm.get('email')
+                    if not config_validateForm(form = email, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+
+                    email = email.strip().lower()
+                    if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
+                                            
+                    email_verify = model_main_users.get(action = 'email', email = email)
+                    if email_verify:
+                        return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
                     
-                    insert = model_restaurant_users.insert(action = 'one', name = name)
+                    password = v_requestForm.get('password')
+                    if not config_validateForm(form = password, min = 8):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
+                    elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
+                        return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
+                    
+                    name = name.strip().capitalize()
+                    surname = surname.strip().capitalize()                    
+
+                    user_id = config_genUniqueID()
+                    passw = bcrypt.hash(password)
+
+                    insert = model_main_users.insert(action = 'one_register', user_id = user_id, name = html.escape(name), surname = html.escape(surname), email = html.escape(email), password = passw)
                     if not insert:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
                     return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
                 elif v_action == 'edit':
                     param_id = v_requestForm.get('id')
-                    item = model_restaurant_users.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                    item = model_main_users.get(action = 'one', user_id = param_id)
                     if not item:
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
 
                     name = v_requestForm.get('name')
-                    if not config_validateForm(form = name, min = 1):
-                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
-                
+                    if not config_validateForm(form = name, min = 1) or not config_verifyText(name):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un nombre válido e inténtelo de nuevo.'})
+
+                    surname = v_requestForm.get('surname')
+                    if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
+    
+                    email = v_requestForm.get('email')
+                    if not config_validateForm(form = email, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+                    
+                    email = email.strip().lower()
+                    if item['email'] != email:
+                        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+                            return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
+                                                
+                        email_verify = model_main_users.get(action = 'email', email = email)
+                        if email_verify:
+                            return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+                    
+                    password = v_requestForm.get('password')
+                    if not password:
+                        passw = item['password']
+                    else:
+                        if not config_validateForm(form = password, min = 8):
+                            return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
+                        elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
+                            return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
+
+                        passw = bcrypt.hash(password)
+
                     status = v_requestForm.get('status')
                     if not status:
                         status = 'off'
                     
                     status = True if status == 'on' else False
-                    update = model_restaurant_users.update(action = 'one', product_category_id = int(param_id), name = name, status = status)
+                    name = name.strip().capitalize()
+                    surname = surname.strip().capitalize()                    
+
+                    update = model_main_users.update(action = 'one', user_id = param_id, email = email, password = passw, status = status)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -274,7 +335,7 @@ def main_web(path):
                 return jsonify({'success': True, 'html': render_template('/restaurant/manage/users/add.html')})    
             elif request.method == 'GET' and path == 'api/web/widget/manage/user/edit':
                 param_id = v_requestArgs.get('id')
-                item = model_restaurant_users.get(action = 'one', product_category_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                item = model_main_users.get(action = 'one', user_id = param_id)
                 if item:
                     return jsonify({'success': True, 'html': render_template('/restaurant/manage/users/edit.html', item = item)})    
             

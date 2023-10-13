@@ -92,13 +92,13 @@ def main_web(path):
                     if not config_validateForm(form = name, min = 1) or not config_verifyText(name):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un nombre válido e inténtelo de nuevo.'})
                     
-                    name = html.escape(name.strip().capitalize())
+                    name = name.strip().capitalize()
 
                     surname = v_requestForm.get('surname')
                     if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
                     
-                    surname = html.escape(surname.strip().capitalize())
+                    surname = surname.strip().capitalize()
 
                     email = v_requestForm.get('email')
                     if not config_validateForm(form = email, min = 1):
@@ -129,7 +129,7 @@ def main_web(path):
                     user_id = config_genUniqueID()
                     passw = bcrypt.hash(password)
 
-                    signup = model_main_users.insert(action = 'client', user_id = user_id, name = name, surname = surname, email = email, password = passw)
+                    signup = model_main_users.insert(action = 'one_register', user_id = user_id, name = html.escape(name), surname = html.escape(surname), email = html.escape(email), password = passw)
                     if not signup:
                         return jsonify({'success': False, 'msg': 'No se pudo completar el registro. Por favor, inténtelo de nuevo. Si el problema persiste, no dude en ponerse en contacto con nosotros para obtener ayuda.'})
                     
