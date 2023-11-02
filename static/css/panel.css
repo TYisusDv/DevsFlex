@@ -695,7 +695,7 @@ p.footer {
   color: var(--text-color-2);
 }
 
-.form-input input {
+.form-input input, .form-input select {
   padding: 5px 5px 5px 0px;
   background: transparent;
   border: none;
@@ -715,7 +715,9 @@ p.footer {
 }
 
 .form-input input:active,
-.form-input input:focus-visible {
+.form-input input:focus-visible,
+.form-input select:active,
+.form-input select:focus-visible {
   background: transparent;
   border: none;
   outline: 0;

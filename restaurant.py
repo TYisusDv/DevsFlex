@@ -87,6 +87,7 @@ def main_web(path):
                     return redirect('/')
         
         elif v_sessionVerify == 1:
+            #DASHBOARD
             if request.method == 'GET' and path == 'api/web/widget/dashboard':
                 return jsonify({'success': True, 'html': render_template('/restaurant/home/dashboard.html')})
             
@@ -138,7 +139,22 @@ def main_web(path):
                         item['regdate'] = f'<span class="badge bg-primary">{config_convertDate(item["regdate"])}</span>'
                         
                     data_count = model_main_users.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                elif v_action == 'manage_customers':
+                    data = model_restaurant_customers.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['actions'] = f'<div class="table-actions"><a href="/manage/customer/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+                        item['email'] = f'<span class="badge bg-primary">{item["email"]}</span>'
+                        item['regdate'] = f'<span class="badge bg-primary">{config_convertDate(item["regdate"])}</span>'
+                        
+                    data_count = model_restaurant_customers.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                elif v_action == 'manage_tables':
+                    data = model_restaurant_tables.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['actions'] = f'<div class="table-actions"><a href="/manage/table/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+                        item['table_status']['name'] = f'<span class="badge bg-primary">{item["table_status"]["name"]}</span>'
 
+                    data_count = model_restaurant_tables.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
+                               
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
             #ORDER TYPES
@@ -341,10 +357,8 @@ def main_web(path):
             
             #CUSTOMERS
             elif request.method == 'GET' and path == 'api/web/widget/manage/customers':
-                actives = model_main_users.get(action = 'count_status', status = True)
-                banned = model_main_users.get(action = 'count_status', status = False)
-                total = actives + banned
-                return jsonify({'success': True, 'html': render_template('/restaurant/manage/customers.html', total = total, actives = actives, banned = banned)})    
+                total = model_restaurant_customers.get(action = 'all_count')
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/customers.html', total = total)})    
             elif request.method == 'POST' and path == 'api/web/data/manage/customers':
                 if v_action == 'add':                    
                     name = v_requestForm.get('name')
@@ -355,6 +369,10 @@ def main_web(path):
                     if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
 
+                    phone = v_requestForm.get('phone')
+                    if not config_validateForm(form = phone, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un numero de telefono válido e inténtelo de nuevo.'})
+
                     email = v_requestForm.get('email')
                     if not config_validateForm(form = email, min = 1):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})
@@ -363,30 +381,23 @@ def main_web(path):
                     if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
                                             
-                    email_verify = model_main_users.get(action = 'email', email = email)
+                    email_verify = model_restaurant_customers.get(action = 'email', email = email)
                     if email_verify:
                         return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
-                    
-                    password = v_requestForm.get('password')
-                    if not config_validateForm(form = password, min = 8):
-                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
-                    elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
-                        return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
                     
                     name = name.strip().capitalize()
                     surname = surname.strip().capitalize()                    
 
-                    user_id = config_genUniqueID()
-                    passw = bcrypt.hash(password)
+                    person_id = config_genUniqueID()
 
-                    insert = model_main_users.insert(action = 'one_register', user_id = user_id, name = html.escape(name), surname = html.escape(surname), email = html.escape(email), password = passw)
+                    insert = model_restaurant_customers.insert(action = 'one_register', person_id = person_id, name = html.escape(name), surname = html.escape(surname), email = html.escape(email), phone = phone)
                     if not insert:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
                     return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
                 elif v_action == 'edit':
                     param_id = v_requestForm.get('id')
-                    item = model_main_users.get(action = 'one', user_id = param_id)
+                    item = model_restaurant_customers.get(action = 'one', customer_id = param_id)
                     if not item:
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
 
@@ -397,6 +408,10 @@ def main_web(path):
                     surname = v_requestForm.get('surname')
                     if not config_validateForm(form = surname, min = 1) or not config_verifyText(surname):
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione al menos un apellido válido e inténtelo de nuevo.'})
+
+                    phone = v_requestForm.get('phone')
+                    if not config_validateForm(form = phone, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un numero telefono válido e inténtelo de nuevo.'})
     
                     email = v_requestForm.get('email')
                     if not config_validateForm(form = email, min = 1):
@@ -407,30 +422,14 @@ def main_web(path):
                         if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
                             return jsonify({'success': False, 'msg': 'Por favor, proporcione un correo válido e inténtelo de nuevo.'})                           
                                                 
-                        email_verify = model_main_users.get(action = 'email', email = email)
+                        email_verify = model_restaurant_customers.get(action = 'email', email = email)
                         if email_verify:
-                            return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})
+                            return jsonify({'success': False, 'msg': 'El correo ya está en uso. Por favor, proporcione un correo válido e inténtelo de nuevo.'})                 
                     
-                    password = v_requestForm.get('password')
-                    if not password:
-                        passw = item['password']
-                    else:
-                        if not config_validateForm(form = password, min = 8):
-                            return jsonify({'success': False, 'msg': 'Por favor, proporcione una contraseña válida con al menos 8 caracteres e inténtelo de nuevo.'})
-                        elif not re.search(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&+=!])(?!.*\s).{8,}$', password):
-                            return jsonify({'success': False, 'msg': 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número, un carácter especial y tener al menos 8 caracteres. Por favor, inténtelo de nuevo.'})
-
-                        passw = bcrypt.hash(password)
-
-                    status = v_requestForm.get('status')
-                    if not status:
-                        status = 'off'
-                    
-                    status = True if status == 'on' else False
                     name = name.strip().capitalize()
                     surname = surname.strip().capitalize()                    
 
-                    update = model_main_users.update(action = 'one', user_id = param_id, email = email, password = passw, status = status)
+                    update = model_restaurant_customers.update(action = 'one', customer_id = param_id, person_id = item['person']['_id'], email = email, name = name, surname = surname, phone = phone)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -440,9 +439,55 @@ def main_web(path):
                 return jsonify({'success': True, 'html': render_template('/restaurant/manage/customer/add.html')})    
             elif request.method == 'GET' and path == 'api/web/widget/manage/customer/edit':
                 param_id = v_requestArgs.get('id')
-                item = model_main_users.get(action = 'one', user_id = param_id)
+                item = model_restaurant_customers.get(action = 'one', customer_id = param_id)
                 if item:
                     return jsonify({'success': True, 'html': render_template('/restaurant/manage/customer/edit.html', item = item)})    
+            
+            #TABLES
+            elif request.method == 'GET' and path == 'api/web/widget/manage/tables':
+                total = model_restaurant_tables.get(action = 'all_count')
+
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/tables.html', total = total)})    
+            elif request.method == 'POST' and path == 'api/web/data/manage/tables':
+                if v_action == 'add':
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
+
+                    insert = model_restaurant_tables.insert(action = 'one', name = html.escape(name), table_status_id = 1)
+                    if not insert:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
+                elif v_action == 'edit':
+                    param_id = v_requestForm.get('id')
+                    item = model_restaurant_tables.get(action = 'one', table_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                    if not item:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
+
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
+                
+                    table_status_id = v_requestForm.get('table_status_id')
+                    table_status = model_restaurant_table_states.get(action = 'one', table_status_id = int(table_status_id) if table_status_id and str(table_status_id).isnumeric() else None)
+                    if not table_status:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione el estatus válido e inténtelo de nuevo.'}) 
+                    
+                    update = model_restaurant_tables.update(action = 'one', table_id = int(param_id), name = html.escape(name), table_status_id = int(table_status_id))
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se editó correctamente. Redireccionando...'})                
+            #TABLES ADD/EDIT
+            elif request.method == 'GET' and path == 'api/web/widget/manage/table/add':                
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/table/add.html')})    
+            elif request.method == 'GET' and path == 'api/web/widget/manage/table/edit':
+                param_id = v_requestArgs.get('id')
+                item = model_restaurant_tables.get(action = 'one', table_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                if item:
+                    table_states = model_restaurant_table_states.get(action = 'all')
+                    return jsonify({'success': True, 'html': render_template('/restaurant/manage/table/edit.html', item = item, table_states = table_states)})    
             
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': 'S404', 'msg': 'Página no encontrada.'}), 404

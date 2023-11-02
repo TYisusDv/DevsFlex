@@ -1,9 +1,9 @@
 <div class="d-flex no-wrap g-20 justify-content-space-between align-items-baseline">
-    <h1 class="mb-20px">Administración de clientes</h1>
+    <h1 class="mb-20px">Administración de mesas</h1>
     <ul class="web-routes">
         <li>Administrar</li>
         <li>/</li>
-        <li>Clientes</li>
+        <li>Mesas</li>
     </ul>
 </div>
 <div class="d-flex g-20">
@@ -13,7 +13,7 @@
                 {{total}}
             </div>
             <div class="icon">
-                <i class="fa-solid fa-user-group"></i>
+                <i class="fa-solid fa-utensils"></i>
             </div>
             <div class="col-12 pt-10px">
                 <p>TOTAL</p>
@@ -22,7 +22,7 @@
     </div>
 </div>
 <div class="d-flex mt-20px justify-content-flex-end">
-    <a href="/manage/customer/add" class="btn bg-primary"><i class="fa-solid fa-plus mr-5px"></i> Agregar</a>
+    <a href="/manage/table/add" class="btn bg-primary"><i class="fa-solid fa-plus mr-5px"></i> Agregar</a>
 </div>
 <div class="d-flex mt-10px">
     <div class="table-responsive">
@@ -30,10 +30,8 @@
             <thead>
                 <tr>
                     <th>Acciones</th>
-                    <th>Correo electrónico</th>
                     <th>Nombre</th>
-                    <th>Apellido</th>
-                    <th>Fecha de registro</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -45,13 +43,11 @@
     $(document).ready(function() {
         var table = api_dataTable(
             "#myTable",
-            "manage_customers", 
+            "manage_tables", 
             [
                 {data: "actions"},
-                {data: "email"},
-                {data: "person.name"},
-                {data: "person.surname"},
-                {data: "regdate"}
+                {data: "name"},
+                {data: "table_status.name"}
             ]
         );        
     });

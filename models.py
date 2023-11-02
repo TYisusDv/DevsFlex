@@ -37,8 +37,8 @@ class model_main_users:
             pipeline = [
                 {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
                 {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
-                {'$lookup': {'from': 'user_persons', 'localField': 'user_person.$id', 'foreignField': '_id', 'as': 'user_person'}},                
-                {'$unwind': {'path': '$user_person', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
                 {
                     '$match': {
                         '_id': user_id
@@ -55,14 +55,14 @@ class model_main_users:
             pipeline = [
                 {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
                 {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
-                {'$lookup': {'from': 'user_persons', 'localField': 'user_person.$id', 'foreignField': '_id', 'as': 'user_person'}},                
-                {'$unwind': {'path': '$user_person', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
                 {
                     '$match': {
                         '$or': [
                             {'email': {'$regex': config_searchRegex(search), '$options': 'i'}},
-                            {'user_person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
-                            {'user_person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
                         ]
                     }
@@ -78,15 +78,15 @@ class model_main_users:
             pipeline = [
                 {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
                 {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
-                {'$lookup': {'from': 'user_persons', 'localField': 'user_person.$id', 'foreignField': '_id', 'as': 'user_person'}},                
-                {'$unwind': {'path': '$user_person', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
                 {
                     '$match': {
                         '$or': [
                             {'email': {'$regex': config_searchRegex(search), '$options': 'i'}},
-                            {'user_person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
-                            {'user_person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
-                            {'user_person.phone': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.phone': {'$regex': config_searchRegex(search), '$options': 'i'}},
                             {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}}
                         ]
                     }
@@ -118,7 +118,7 @@ class model_main_users:
     def insert(action = None, user_id = None, name = None, surname = None, email = None, password = 'x'):
         try: 
             if action == 'one_register':
-                v_model_person = model_main_user_persons.insert(action = 'one_register', name = name, surname = surname)
+                v_model_person = model_main_persons.insert(action = 'one_register', name = name, surname = surname)
                 if v_model_person[0]:
                     document = {
                         '_id': user_id,                    
@@ -127,7 +127,7 @@ class model_main_users:
                         'access': [],
                         'regdate': datetime.utcnow(),
                         'status': True,
-                        'user_person': {'$ref': 'user_persons', '$id': v_model_person[1]},
+                        'person': {'$ref': 'persons', '$id': v_model_person[1]},
                         'user_role': {'$ref': 'user_roles', '$id': 'normal'}
                     } 
 
@@ -159,25 +159,25 @@ class model_main_users:
         except Exception as e:
             return False
 
-class model_main_user_persons:
+class model_main_persons:
     @staticmethod
-    def get(action = None, user_person_id = None, email = None):
+    def get(action = None, person_id = None, email = None):
                 
         return None
 
     @staticmethod
-    def insert(action = None, name = None, surname = None):
+    def insert(action = None, name = None, surname = None, phone = None):
         try: 
             if action == 'one_register':
-                new_id = model_next_count('user_person_id')
+                new_id = model_next_count('person_id')
                 document = {
                     '_id': new_id,
                     'name': name,
                     'surname': surname,
-                    'phone': None
+                    'phone': phone,
                 } 
 
-                db_mongo_main.user_persons.insert_one(document, bypass_document_validation = True)
+                db_mongo_main.persons.insert_one(document, bypass_document_validation = True)
                 
                 return True, new_id
             
@@ -225,6 +225,179 @@ class model_main_user_sessions:
 
                 db_mongo_main.user_sessions.delete_many(document)
                 
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+
+class model_restaurant_persons:
+    @staticmethod
+    def get(action = None, person_id = None, email = None):
+                
+        return None
+
+    @staticmethod
+    def insert(action = None, name = None, surname = None, phone = None):
+        try: 
+            if action == 'one_register':
+                new_id = model_restaurant_next_count('person_id')
+                document = {
+                    '_id': new_id,
+                    'name': name,
+                    'surname': surname,
+                    'phone': phone,
+                } 
+
+                db_mongo_restaurant.persons.insert_one(document, bypass_document_validation = True)
+                
+                return True, new_id
+            
+            return False
+        except Exception as e:
+            return False
+    
+    @staticmethod
+    def update(action = None, person_id = None, name = None, surname = None, phone = None):
+        try: 
+            if action == 'one':
+                document = {'_id': person_id} 
+
+                update = {
+                    '$set': {
+                        'name': name,
+                        'surname': surname,
+                        'phone': phone,
+                    }
+                }
+
+                db_mongo_restaurant.persons.update_one(document, update)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+        
+class model_restaurant_customers:
+    @staticmethod
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', customer_id = None, email = None, status = False):
+        if action == 'person_id':
+            data = db_mongo_restaurant.customers.find_one({'_id': customer_id})
+            return data
+        elif action == 'email':
+            data = db_mongo_restaurant.customers.find_one({'email': email})
+            return data
+        elif action == 'one':
+            pipeline = [
+                {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
+                {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '_id': customer_id
+                    }
+                },
+                {'$limit': 1}
+            ]
+
+            data = list(db_mongo_restaurant.customers.aggregate(pipeline))
+            if not data:
+                return None
+            return data[0]
+        elif action == 'all_table':
+            pipeline = [
+                {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
+                {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'email': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$skip': start},
+                {'$limit': length}
+            ]
+
+            data = list(db_mongo_restaurant.customers.aggregate(pipeline))
+            return data
+        elif action == 'all_table_count':
+            pipeline = [
+                {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
+                {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'email': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'person.phone': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'user_role.name': {'$regex': config_searchRegex(search), '$options': 'i'}}
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.customers.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count        
+        elif action == 'all_count':
+            pipeline = [
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.customers.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count        
+
+        return None
+    
+    @staticmethod
+    def insert(action = None, customer_id = None, name = None, surname = None, email = None, phone = None):
+        try: 
+            if action == 'one_register':
+                v_model_person = model_restaurant_persons.insert(action = 'one_register', name = name, surname = surname, phone = phone)
+                if v_model_person[0]:
+                    document = {
+                        '_id': customer_id,                    
+                        'email': email,
+                        'regdate': datetime.utcnow(),
+                        'person': {'$ref': 'persons', '$id': v_model_person[1]},
+                        'user_role': {'$ref': 'user_roles', '$id': 'normal'}
+                    } 
+
+                    db_mongo_restaurant.customers.insert_one(document, bypass_document_validation = True)
+                    
+                    return True
+            return False
+        except Exception as e:
+            return False
+    
+    @staticmethod
+    def update(action = None, customer_id = None, person_id = None, email = None, name = None, surname = None, phone = None):
+        try:
+            if action == 'one':
+                model_restaurant_persons.update(action = 'one', person_id = person_id, name = name, surname = surname, phone = phone)
+                document = {'_id': customer_id} 
+
+                update = {
+                    '$set': {
+                        'email': email
+                    }
+                }
+
+                db_mongo_restaurant.customers.update_one(document, update)
                 return True
             
             return False
@@ -414,6 +587,124 @@ class model_restaurant_product_categories:
                 }
 
                 db_mongo_restaurant.product_categories.update_one(document, update)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+
+class model_restaurant_table_states:
+    @staticmethod
+    def get(action = None, table_status_id = None):
+        if action == 'one':            
+            data = db_mongo_restaurant.table_states.find_one({'_id': table_status_id})
+            return data
+        elif action == 'all':
+            data = list(db_mongo_restaurant.table_states.find())
+            return data
+       
+        return None
+
+
+class model_restaurant_tables:
+    @staticmethod
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', table_id = None):
+        if action == 'one':            
+            pipeline = [
+                {'$lookup': {'from': 'table_states', 'localField': 'table_status.$id', 'foreignField': '_id', 'as': 'table_status'}},                
+                {'$unwind': {'path': '$table_status', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '_id': table_id
+                    }
+                },
+                {'$limit': 1}
+            ]
+
+            data = list(db_mongo_restaurant.tables.aggregate(pipeline))
+            if not data:
+                return None
+            
+            return data[0]
+        elif action == 'all_table':
+            pipeline = [
+                {'$lookup': {'from': 'table_states', 'localField': 'table_status.$id', 'foreignField': '_id', 'as': 'table_status'}},                
+                {'$unwind': {'path': '$table_status', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$skip': start},
+                {'$limit': length}
+            ]
+
+            data = list(db_mongo_restaurant.tables.aggregate(pipeline))
+            return data
+        elif action == 'all_table_count':
+            pipeline = [
+                {'$lookup': {'from': 'table_states', 'localField': 'table_status.$id', 'foreignField': '_id', 'as': 'table_status'}},                
+                {'$unwind': {'path': '$table_status', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.tables.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count        
+        elif action == 'all_count':
+            pipeline = [
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.tables.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count  
+        return None
+
+    @staticmethod
+    def insert(action = None, name = None, table_status_id = None):
+        try:
+            if action == 'one':
+                document = {
+                    '_id': model_restaurant_next_count('table_id'),
+                    'name': name,
+                    'table_status': {'$ref': 'table_states', '$id': table_status_id},
+                }
+
+                db_mongo_restaurant.tables.insert_one(document)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+        
+    @staticmethod
+    def update(action = None, table_id = None, name = None, table_status_id = False):
+        try:
+            if action == 'one':
+                document = {'_id': table_id} 
+
+                update = {
+                    '$set': {
+                        'name': name,
+                        'table_status': {'$ref': 'table_states', '$id': table_status_id},
+                    }
+                }
+
+                db_mongo_restaurant.tables.update_one(document, update)
                 return True
             
             return False
