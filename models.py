@@ -504,6 +504,9 @@ class model_restaurant_product_categories:
         if action == 'one':            
             data = db_mongo_restaurant.product_categories.find_one({'_id': product_category_id})
             return data
+        elif action == 'all':            
+            data = db_mongo_restaurant.product_categories.find()
+            return data
         elif action == 'all_table':
             pipeline = [
                 {
@@ -605,7 +608,6 @@ class model_restaurant_table_states:
        
         return None
 
-
 class model_restaurant_tables:
     @staticmethod
     def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', table_id = None):
@@ -705,6 +707,130 @@ class model_restaurant_tables:
                 }
 
                 db_mongo_restaurant.tables.update_one(document, update)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+
+class model_restaurant_products:
+    @staticmethod
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', product_id = None, status = False):
+        if action == 'one':            
+            pipeline = [
+                {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
+                {'$unwind': {'path': '$product_category', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '_id': product_id
+                    }
+                },
+                {'$limit': 1}
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))
+            if not data:
+                return None
+            
+            return data[0]
+        elif action == 'all_table':
+            pipeline = [
+                {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
+                {'$unwind': {'path': '$product_category', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$skip': start},
+                {'$limit': length}
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))
+            return data
+        elif action == 'all_table_count':
+            pipeline = [
+                {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
+                {'$unwind': {'path': '$product_category', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count        
+        elif action == 'all_count':
+            pipeline = [
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count  
+        elif action == 'all_count_status':
+            pipeline = [
+                {
+                    '$match': {
+                        'status': status,
+                    }
+                },
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count    
+        return None
+
+    @staticmethod
+    def insert(action = None, name = None, description = None, price = None, product_category_id = None):
+        try:
+            if action == 'one':
+                document = {
+                    '_id': model_restaurant_next_count('product_id'),
+                    'name': name,
+                    'description': description,
+                    'price': price,
+                    'status': False,
+                    'product_category': {'$ref': 'product_categories', '$id': product_category_id},
+                }
+
+                db_mongo_restaurant.products.insert_one(document)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+        
+    @staticmethod
+    def update(action = None, product_id = None, name = None, description = None, price = None, status = False, product_category_id = None):
+        try:
+            if action == 'one':
+                document = {'_id': product_id} 
+
+                update = {
+                    '$set': {
+                        'name': name,
+                        'description': description,
+                        'price': price,
+                        'status': status,
+                        'product_category': {'$ref': 'product_categories', '$id': product_category_id},
+                    }
+                }
+
+                db_mongo_restaurant.products.update_one(document, update)
                 return True
             
             return False

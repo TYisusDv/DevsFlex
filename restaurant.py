@@ -154,7 +154,15 @@ def main_web(path):
                         item['table_status']['name'] = f'<span class="badge bg-primary">{item["table_status"]["name"]}</span>'
 
                     data_count = model_restaurant_tables.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
-                               
+                elif v_action == 'manage_products':
+                    data = model_restaurant_products.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['actions'] = f'<div class="table-actions"><a href="/manage/product/edit?id={item["_id"]}" class="btn-sm bg-outline-primary"><i class="fa-solid fa-pen-to-square"></i></a></div>'
+                        item['product_category']['name'] = f'<span class="badge bg-primary">{item["product_category"]["name"]}</span>'
+                        item['price'] = f'<span class="badge bg-primary">${item["price"]}</span>'
+                        item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
+
+                    data_count = model_restaurant_products.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)              
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
             #ORDER TYPES
@@ -488,6 +496,82 @@ def main_web(path):
                 if item:
                     table_states = model_restaurant_table_states.get(action = 'all')
                     return jsonify({'success': True, 'html': render_template('/restaurant/manage/table/edit.html', item = item, table_states = table_states)})    
+            
+            #PRODUCTS
+            elif request.method == 'GET' and path == 'api/web/widget/manage/products':
+                visible = model_restaurant_products.get(action = 'all_count_status', status = True)
+                hidden = model_restaurant_products.get(action = 'all_count_status', status = False)
+                total = visible + hidden
+
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/products.html', total = total, visible = visible, hidden = hidden)})    
+            elif request.method == 'POST' and path == 'api/web/data/manage/products':
+                if v_action == 'add':
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
+                    
+                    description = v_requestForm.get('description')
+                    if not config_validateForm(form = description, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una descripcion válida e inténtelo de nuevo.'})
+                    
+                    price = v_requestForm.get('price')
+                    if not config_validateForm(form = name, min = 1) or not config_isFloat(price):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un precio válido e inténtelo de nuevo.'})                        
+
+                    product_category_id = v_requestForm.get('product_category_id')
+                    product_category = model_restaurant_product_categories.get(action = 'one', product_category_id = int(product_category_id) if product_category_id and str(product_category_id).isnumeric() else None)
+                    if not product_category:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una categoria válida e inténtelo de nuevo.'}) 
+
+                    insert = model_restaurant_products.insert(action = 'one', name = html.escape(name), description = html.escape(description), price = float(price), product_category_id = int(product_category_id))
+                    if not insert:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
+                elif v_action == 'edit':
+                    param_id = v_requestForm.get('id')
+                    item = model_restaurant_products.get(action = 'one', product_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                    if not item:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
+
+                    name = v_requestForm.get('name')
+                    if not config_validateForm(form = name, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un nombre válido e inténtelo de nuevo.'})
+                    
+                    description = v_requestForm.get('description')
+                    if not config_validateForm(form = description, min = 1):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una descripcion válida e inténtelo de nuevo.'})
+                    
+                    price = v_requestForm.get('price')
+                    if not config_validateForm(form = name, min = 1) or not config_isFloat(price):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un precio válido e inténtelo de nuevo.'})   
+
+                    product_category_id = v_requestForm.get('product_category_id')
+                    product_category = model_restaurant_product_categories.get(action = 'one', product_category_id = int(product_category_id) if product_category_id and str(product_category_id).isnumeric() else None)
+                    if not product_category:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una categoria válida e inténtelo de nuevo.'}) 
+
+                    status = v_requestForm.get('status')
+                    if not status:
+                        status = 'off'
+                    
+                    status = True if status == 'on' else False
+
+                    update = model_restaurant_products.update(action = 'one', product_id = int(param_id), name = html.escape(name), description = html.escape(description), price = float(price), product_category_id = int(product_category_id), status = status)
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se editó correctamente. Redireccionando...'})                
+            #PRODUCTS ADD/EDIT
+            elif request.method == 'GET' and path == 'api/web/widget/manage/product/add':          
+                product_categories = model_restaurant_product_categories.get(action = 'all')      
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/product/add.html', product_categories = product_categories)})    
+            elif request.method == 'GET' and path == 'api/web/widget/manage/product/edit':
+                param_id = v_requestArgs.get('id')
+                item = model_restaurant_products.get(action = 'one', product_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                if item:
+                    product_categories = model_restaurant_product_categories.get(action = 'all')
+                    return jsonify({'success': True, 'html': render_template('/restaurant/manage/product/edit.html', item = item, product_categories = product_categories)})    
             
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': 'S404', 'msg': 'Página no encontrada.'}), 404

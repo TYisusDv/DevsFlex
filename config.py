@@ -44,6 +44,8 @@ config_routes_restaurant = [
     'manage/customer/add',
     'manage/customer/edit',
     'manage/products',
+    'manage/product/add',
+    'manage/product/edit',
     'manage/product/categories',
     'manage/product/category/add',
     'manage/product/category/edit',
@@ -117,3 +119,10 @@ def config_convertDate(date):
     date_converted = date_object.strftime(format_fin)
     
     return date_converted
+
+def config_isFloat(num):
+    try:
+        num = float(num)
+        return True
+    except:
+        return False

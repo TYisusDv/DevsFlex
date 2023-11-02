@@ -1,10 +1,10 @@
 <div class="d-flex flex-direction-column w-100 align-items-center"> 
     <div class="d-flex-w-60 g-20 no-wrap justify-content-space-between align-items-baseline">
-        <h1 class="mb-20px">Administración de mesas</h1>
+        <h1 class="mb-20px">Administración de prodcutos</h1>
         <ul class="web-routes">
             <li>Administrar</li>
             <li>/</li>
-            <li>Mesa</li>
+            <li>Producto</li>
             <li>/</li>
             <li>Editar</li>
         </ul>
@@ -19,15 +19,30 @@
                     <div class="form-input">
                         <i class="fa-solid fa-align-justify"></i>
                         <input type="text" name="name" placeholder="Nombre" value="{{item.name}}">
-                    </div>
+                    </div>       
                     <div class="form-input">
-                        <i class="fa-solid fa-sitemap"></i>
-                        <select name="table_status_id">
-                            {% for table_status in table_states %}
-                            <option value="{{table_status._id}}" {% if table_status._id == item.table_status._id %}selected{% endif %}>{{table_status.name}}</option>
+                        <i class="fa-solid fa-list-ul"></i>
+                        <input type="text" name="description" placeholder="Descripción" value="{{item.description}}">
+                    </div>       
+                    <div class="form-input">
+                        <i class="fa-solid fa-tag"></i>
+                        <input type="text" name="price" placeholder="Precio" value="{{item.price}}">
+                    </div>  
+                    <div class="form-input">
+                        <i class="fa-solid fa-building-columns"></i>
+                        <select name="product_category_id">
+                            {% for product_category in product_categories %}
+                            <option value="{{product_category._id}}" {% if product_category._id == item.product_category._id %}selected{% endif %}>{{product_category.name}}</option>
                             {% endfor %}
                         </select>
-                    </div>                                   
+                    </div>
+                    <div class="form-input">
+                        <i class="fa-solid fa-eye"></i>
+                        <label class="switch">
+                            <input type="checkbox" name="status" {% if item.status %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label> 
+                    </div>                                      
                 </div>
                 <div class="footer">
                     <button type="submit" class="btn bg-outline-primary"><span><i class="fa-solid fa-save"></i> Guardar</span></button>
@@ -49,7 +64,7 @@
         formData.append("action", "edit")
         formData.append("id", "{{item._id}}")
         
-        var response = api_sendData({url: "data/manage/tables", type: "POST", formData: formData});
+        var response = api_sendData({url: "data/manage/products", type: "POST", formData: formData});
         setTimeout(function(){
             response.then(function (response) {
                 if(!response.success){
@@ -60,7 +75,7 @@
                 
                 $("#form-edit").find(".body").prepend(api_alert({type: "primary", title: "¡Exito!", text: response.msg}));
                 setTimeout(function(){    
-                    api_loadWidget('/manage/tables')
+                    api_loadWidget('/manage/products')
                 }, 2000);
                 return;
             }).catch(function (response) {
