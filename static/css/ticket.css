@@ -1,0 +1,133 @@
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-Regular.otf")
+    format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-Bold.otf") format("opentype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-DemiBold.otf")
+    format("opentype");
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-ExtraBold.otf")
+    format("opentype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-ExtraLight.otf")
+    format("opentype");
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-Heavy.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "VisbyRound";
+  src: url("/assets/fonts/VisbyRound/VisbyRoundCF-Medium.otf")
+    format("opentype");
+  font-weight: 500;
+  font-style: normal;
+}
+
+*{
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+
+  font-family: "VisbyRound", "Nunito Sans", sans-serif;
+}
+
+.ticket {
+  padding: 3mm;
+}
+
+h1 {
+  text-align: center;
+}
+
+p{
+  font-size: 3.8mm;
+  margin-top: 0;
+  margin-bottom: 1mm;
+}
+
+.logo {
+  text-align: center;
+}
+
+.logo img {
+  width: auto;
+  height: 30mm;
+  margin-bottom: 2mm;
+}
+
+.info {
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+
+.info.qr p{
+  font-size: 3mm;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2mm;
+  margin-bottom: 2mm;
+}
+
+table th{
+  text-align: left;
+}
+
+table th,
+table td {
+  font-size: 3.5mm;
+  padding: 1.5mm;
+  border-bottom: 0.5mm solid #000;
+}
+
+.total {
+  text-align: right;
+}
+
+@media print {
+  #print-button {
+    display: none;
+  }
+}

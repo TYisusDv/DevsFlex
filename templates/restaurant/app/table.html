@@ -493,6 +493,7 @@
                             return;
                         }            
                         
+                        window.open('/app/table/ticket?id=' + response.ticket, '_blank');
                         Swal.fire(
                             '¡Exito!',
                             response.msg,

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DevsFlex Restaurant - Ticket</title>
+    <style>
+        @page {
+            size: 57.5mm; 
+            margin: 0; 
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" href="{{config_app.url_restaurant}}/assets/css/ticket.css?v=1.0.0">    
+</head>
+<body>
+  <div class="ticket">
+    <div class="logo">
+      <img src="{{config_app.url_restaurant}}/assets/images/chef.png" alt="DevsFlex Restaurant">
+    </div>
+    <div class="info">
+      <p><strong>DevsFlex Restaurant</strong></p>
+      <p>Calle Santa Maria del Valle #2</p>
+      <p><strong>RFC:</strong> N/A</p>
+      <p><strong>Tel:</strong> 3481468309</p>
+      <p><strong>Camarero/a:</strong> {{order.user|get_user_name}}</p>
+      <p><strong>Fecha:</strong> {{order_regdate}}</p>
+      <br>
+      <p><strong>Recibo:</strong> #{{order.no}}</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order_details %}
+        <tr>
+          <td>{{item.quantity}}</td>
+          <td>{{item.product.name}}</td>
+          <td>${{item.price}}</td>
+          <td>${{item.total}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="total">
+      <p><strong>Total:</strong> ${{order.total}}</p>
+      <p style="display: none;" id="change-p"><strong>Cambio:</strong> Q<span id="change">0</span></p>
+    </div>
+    <div class="info" style="margin-top: 10mm; display: flex !important; justify-content: center;">
+        <div id="qrcode"></div>
+    </div>
+    <div class="info qr">
+        <p style="margin-bottom: 0mm;"><strong>Venta</strong></p>
+        <p>{{order_id}}</p>
+    </div>
+  </div>  
+  <script src="{{config_app.url_restaurant}}/assets/js/qrcode.min.js"></script>
+  <script>
+    var qrcode = new QRCode(document.getElementById("qrcode"), {
+      width: 70,
+      height: 70
+    });
+
+    var textoQR = "{{order_id}}";
+    qrcode.makeCode(textoQR);
+  </script>
+</body>
+</html>

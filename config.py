@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from passlib.hash import bcrypt
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 from itsdangerous import URLSafeSerializer
-import json, uuid, requests, re, math, time, sys, random, shutil, os, base64, subprocess, psutil, glob, socket, string, html, secrets, hashlib, jwt
+import json, uuid, requests, re, math, time, sys, random, shutil, os, base64, subprocess, psutil, glob, socket, string, html, secrets, hashlib, jwt, pytz, pdfkit
 
 config_hostname = socket.gethostname()
 
@@ -117,12 +117,20 @@ def config_searchRegex(search = None):
         return ''
 
 def config_convertDate(date):
-    format_entry = "%Y-%m-%d %H:%M:%S.%f"
-    format_fin = "%m/%d/%Y %H:%M:%S"
+    date_gmt = datetime.strptime(str(date), '%Y-%m-%d %H:%M:%S.%f')
+    date_gmt = pytz.timezone('GMT').localize(date_gmt)
+
+    newdate = date_gmt.astimezone(pytz.timezone('America/Mexico_City'))
+
+    date_converted = newdate.strftime('%d/%m/%Y %I:%M %p')
     
-    date_object = datetime.strptime(str(date), format_entry)
-    date_converted = date_object.strftime(format_fin)
-    
+    return date_converted
+
+def config_convertLocalDate(date):
+    date = datetime.strptime(str(date), '%Y-%m-%d %H:%M:%S')    
+    date_gmt = pytz.timezone('GMT').localize(date)
+    newdate = date_gmt.astimezone(pytz.timezone('America/Mexico_City'))
+    date_converted = newdate.strftime('%d/%m/%Y %I:%M %p')    
     return date_converted
 
 def config_isFloat(num):

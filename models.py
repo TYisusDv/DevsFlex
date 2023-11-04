@@ -879,29 +879,39 @@ class model_restaurant_products:
 
 class model_restaurant_orders:
     @staticmethod
-    def insert(action = None, total = 0):
+    def get(action = None, order_id = None):
+        if action == 'one':
+            data = db_mongo_restaurant.orders.find_one({'_id': order_id})
+            return data         
+
+        return None
+ 
+    @staticmethod
+    def insert(action = None, order_id = None, total = 0, user_id = None):
         try:
-            if action == 'one_order_id':
-                order_id = str(uuid.uuid4())
+            if action == 'one_order_id':                
                 document = {
                     '_id': order_id,
+                    'no': model_restaurant_next_count('order_id'),
                     'total': total,
                     'regdate': datetime.utcnow(),
+                    'user': user_id,
                 }
 
                 db_mongo_restaurant.orders.insert_one(document)
-                return order_id
+                return True
             
             return False
         except Exception as e:
             return False
+        
 class model_restaurant_order_details:
     @staticmethod
-    def get(action = None, order_detail_id = None, table_id = None):
+    def get(action = None, order_detail_id = None, table_id = None, order_id = None):
         if action == 'one':
             data = db_mongo_restaurant.order_details.find_one({'_id': order_detail_id})
             return data  
-        if action == 'all_table':
+        elif action == 'all_table':
             pipeline = [
                 {'$lookup': {'from': 'products', 'localField': 'product.$id', 'foreignField': '_id', 'as': 'product'}},                
                 {'$unwind': {'path': '$product', 'preserveNullAndEmptyArrays': True}},
@@ -916,7 +926,31 @@ class model_restaurant_order_details:
                         'order': None,
                         'table._id': table_id,
                     }
+                }
+            ]
+
+            data = list(db_mongo_restaurant.order_details.aggregate(pipeline))
+            return data 
+        elif action == 'all_order':
+            pipeline = [
+                {'$lookup': {'from': 'products', 'localField': 'product.$id', 'foreignField': '_id', 'as': 'product'}},                
+                {'$unwind': {'path': '$product', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'product_categories', 'localField': 'product.product_category.$id', 'foreignField': '_id', 'as': 'product.product_category'}},                
+                {'$unwind': {'path': '$product.product_category', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'tables', 'localField': 'table.$id', 'foreignField': '_id', 'as': 'table'}},                
+                {'$unwind': {'path': '$table', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'table_states', 'localField': 'table.table_status.$id', 'foreignField': '_id', 'as': 'table.table_status'}},                
+                {'$unwind': {'path': '$table.table_status', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        'order.$id': order_id,
+                    }
                 },
+                {
+                    '$project': {
+                        'order': 0,
+                    }
+                }
             ]
 
             data = list(db_mongo_restaurant.order_details.aggregate(pipeline))
@@ -925,17 +959,19 @@ class model_restaurant_order_details:
         return None
  
     @staticmethod
-    def insert(action = None, quantity = None, note = None, total = 0, product_id = None, table_id = None):
+    def insert(action = None, price = None, quantity = None, note = None, total = 0, product_id = None, table_id = None, user_id = None):
         try:
             if action == 'one':
                 document = {
                     '_id': model_restaurant_next_count('order_detail_id'),
+                    'price': price,
                     'quantity': quantity,
                     'note': note,
                     'total': total,
                     'regdate': datetime.utcnow(),
                     'product': {'$ref': 'products', '$id': product_id},
                     'table': {'$ref': 'tables', '$id': table_id},
+                    'user': user_id,
                     'order': None
                 }
 
@@ -947,11 +983,11 @@ class model_restaurant_order_details:
             return False
     
     @staticmethod
-    def update(action = None, table_id = None, total = 0):
+    def update(action = None, order_id = None, table_id = None, total = 0, user_id = None):
         try:
             if action == 'all_order':
-                order_id = model_restaurant_orders.insert(action = 'one_order_id', total = total)
-                if order_id:
+                insert = model_restaurant_orders.insert(action = 'one_order_id', order_id = order_id, total = total, user_id = user_id)
+                if insert:
                     document = {
                         'table.$id': table_id,
                         'order': None

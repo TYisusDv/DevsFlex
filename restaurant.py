@@ -43,14 +43,15 @@ def cache_enabled():
     return True
 
 def restaurant_get_cart():
-    cart_serialized = request.cookies.get('cart')
+    try:
+        with open('cart.json', 'r') as cart_file:
+            return json.load(cart_file)
+    except FileNotFoundError:
+        return []
 
-    if cart_serialized:
-        cart = serializer.loads(cart_serialized)
-    else:
-        cart = []
-    
-    return cart
+def restaurant_save_cart(cart):
+    with open('cart.json', 'w') as cart_file:
+        json.dump(cart, cart_file)
 
 def restaurant_get_order_details(data):
     table_id = data.get('table_id')
@@ -69,6 +70,42 @@ def get_cart():
 def get_order_details(data):
     order_details = restaurant_get_order_details(data)
     emit('update_order_details', order_details)
+
+@app_restaurant.route('/app/table/ticket', methods=['GET'])
+def app_table_ticket():
+    v_requestArgs = request.args
+    v_id = v_requestArgs.get('id')
+    order = model_restaurant_orders.get(action = 'one', order_id = v_id)
+    if order:
+        order_id = order['_id']
+        order_regdate = config_convertDate(order['regdate'])
+
+        order_details = model_restaurant_order_details.get(action = 'all_order', order_id = order_id)
+        
+        num_lines = len(order_details)
+        page_height = 110 + (num_lines * 7)
+
+        options = {
+            'encoding': 'UTF-8',
+            'page-width': '57.5mm',
+            'page-height': f'{page_height}mm',
+            'margin-top': '0mm',
+            'margin-right': '0mm',
+            'margin-bottom': '0mm',
+            'margin-left': '0mm',
+            'enable-local-file-access': ''
+        }
+
+        pdf_bytes = pdfkit.from_string(render_template('/restaurant/app/table/ticket.html', config_app = config_app, order = order, order_id = order_id, order_regdate = order_regdate, order_details = order_details), False, options = options)
+
+        response = make_response(pdf_bytes)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename=Ticket-{order_id}.pdf'
+
+        #return render_template('/restaurant/app/table/ticket.html', config_app = config_app, order = order, order_id = order_id, order_regdate = order_regdate, order_details = order_details)
+        return response
+    
+    return render_template('/error.html', code = '404', msg = 'Página no encontrada.'), 404
 
 @app_restaurant.route('/', defaults={'path': ''})
 @app_restaurant.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])#@cache.cached(timeout = 300, unless = cache_enabled)
@@ -273,10 +310,9 @@ def main_web(path):
                     if not table_found:
                         cart.append({'table_id': table_id, 'products': [{'cart_id': cart_id, 'product_id': product_id, 'product_name': product_name, 'product_price': product_price, 'quantity': quantity, 'total': quantity * product_price, 'product_category': product_category, 'note': note}]})
 
-                    cart_serialized = serializer.dumps(cart)
 
                     response = make_response(jsonify({'success': True, 'msg': 'Se agregó correctamente.'}))
-                    response.set_cookie('cart', cart_serialized)   
+                    restaurant_save_cart(cart)
                     socketio.emit('update_cart', cart)
                  
                     return response
@@ -307,9 +343,8 @@ def main_web(path):
                                     product_entry['note'] = note
                                     product_entry['total'] = product_entry['quantity'] * product_entry['product_price']
 
-                    cart_serialized = serializer.dumps(cart)
                     response = make_response(jsonify({'success': True, 'msg': 'Se editó correctamente.'}))
-                    response.set_cookie('cart', cart_serialized)
+                    restaurant_save_cart(cart)
 
                     socketio.emit('update_cart', cart)
                     return response
@@ -331,13 +366,12 @@ def main_web(path):
                                 return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
                     
                             for product_entry in table_entry['products']:
-                                model_restaurant_order_details.insert(action = 'one', quantity = product_entry['quantity'], note = product_entry['note'], total = product_entry['total'], product_id = product_entry['product_id'], table_id = table_id)
+                                model_restaurant_order_details.insert(action = 'one', price = product_entry['product_price'], quantity = product_entry['quantity'], note = product_entry['note'], total = product_entry['total'], product_id = product_entry['product_id'], table_id = table_id, user_id = v_user_id)
 
                             cart.remove(table_entry)
 
-                    cart_serialized = serializer.dumps(cart)
                     response = make_response(jsonify({'success': True, 'msg': 'Se envió correctamente.'}))
-                    response.set_cookie('cart', cart_serialized)
+                    restaurant_save_cart(cart)
 
                     socketio.emit('update_cart', cart)
                     order_details = restaurant_get_order_details({'table_id': table_id})
@@ -380,13 +414,14 @@ def main_web(path):
                     if not order_details:
                         return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
                     
-                    update = model_restaurant_order_details.update(action = 'all_order', table_id = table_id, total = total)
+                    order_id = str(uuid.uuid4())
+                    update = model_restaurant_order_details.update(action = 'all_order', order_id = order_id, table_id = table_id, total = total, user_id = v_user_id)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al finalizar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
                     order_details = restaurant_get_order_details({'table_id': table_id})
                     socketio.emit('update_order_details', order_details)
-                    return jsonify({'success': True, 'msg': 'Se finalizó correctamente.'})     
+                    return jsonify({'success': True, 'msg': 'Se finalizó correctamente.', 'ticket': order_id})     
             #ORDER TYPES
             elif request.method == 'GET' and path == 'api/web/widget/manage/order/types':
                 visible = model_restaurant_order_types.get(action = 'count_status', status = True)
@@ -822,7 +857,12 @@ def main_setCookie():
     except Exception as e:
         #api_savefile(os.path.join(app.root_path, 'log', 'web.txt'), f'[C{sys.exc_info()[-1].tb_lineno}] {e}')
         pass
-    
+
+@app_restaurant.template_filter('get_user_name')
+def main_get_user_name(value):
+    user = model_main_users.get(action = 'one', user_id = value)
+    return f'{user["person"]["name"]} {user["person"]["surname"]}'
+ 
 @app_restaurant.route('/api/web/token/csrf', methods = ['GET'])
 @csrf.exempt
 def api_webTokenCSRF():
