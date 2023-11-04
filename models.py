@@ -507,6 +507,9 @@ class model_restaurant_product_categories:
         elif action == 'all':            
             data = db_mongo_restaurant.product_categories.find()
             return data
+        elif action == 'all_status':            
+            data = db_mongo_restaurant.product_categories.find({'status': status})
+            return data
         elif action == 'all_table':
             pipeline = [
                 {
@@ -628,6 +631,15 @@ class model_restaurant_tables:
                 return None
             
             return data[0]
+        elif action == 'all':
+            pipeline = [
+                {'$lookup': {'from': 'table_states', 'localField': 'table_status.$id', 'foreignField': '_id', 'as': 'table_status'}},                
+                {'$unwind': {'path': '$table_status', 'preserveNullAndEmptyArrays': True}},
+                {'$sort': {'_id': 1}},
+            ]
+
+            data = list(db_mongo_restaurant.tables.aggregate(pipeline))
+            return data
         elif action == 'all_table':
             pipeline = [
                 {'$lookup': {'from': 'table_states', 'localField': 'table_status.$id', 'foreignField': '_id', 'as': 'table_status'}},                
@@ -673,7 +685,8 @@ class model_restaurant_tables:
 
             data = list(db_mongo_restaurant.tables.aggregate(pipeline))          
             count = data[0]['total'] if data else 0 
-            return count  
+            return count
+    
         return None
 
     @staticmethod
@@ -715,7 +728,7 @@ class model_restaurant_tables:
 
 class model_restaurant_products:
     @staticmethod
-    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', product_id = None, status = False):
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', product_id = None, product_category_id = None, status = False):
         if action == 'one':            
             pipeline = [
                 {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
@@ -733,6 +746,33 @@ class model_restaurant_products:
                 return None
             
             return data[0]
+        elif action == 'all_status':
+            pipeline = [
+                {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
+                {'$unwind': {'path': '$product_category', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        'status': status, 
+                    }
+                }
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))
+            return data
+        elif action == 'all_category_status':
+            pipeline = [
+                {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
+                {'$unwind': {'path': '$product_category', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        'status': status, 
+                        'product_category._id': product_category_id, 
+                    }
+                }
+            ]
+
+            data = list(db_mongo_restaurant.products.aggregate(pipeline))
+            return data
         elif action == 'all_table':
             pipeline = [
                 {'$lookup': {'from': 'product_categories', 'localField': 'product_category.$id', 'foreignField': '_id', 'as': 'product_category'}},                
@@ -836,3 +876,113 @@ class model_restaurant_products:
             return False
         except Exception as e:
             return False
+
+class model_restaurant_orders:
+    @staticmethod
+    def insert(action = None, total = 0):
+        try:
+            if action == 'one_order_id':
+                order_id = str(uuid.uuid4())
+                document = {
+                    '_id': order_id,
+                    'total': total,
+                    'regdate': datetime.utcnow(),
+                }
+
+                db_mongo_restaurant.orders.insert_one(document)
+                return order_id
+            
+            return False
+        except Exception as e:
+            return False
+class model_restaurant_order_details:
+    @staticmethod
+    def get(action = None, order_detail_id = None, table_id = None):
+        if action == 'one':
+            data = db_mongo_restaurant.order_details.find_one({'_id': order_detail_id})
+            return data  
+        if action == 'all_table':
+            pipeline = [
+                {'$lookup': {'from': 'products', 'localField': 'product.$id', 'foreignField': '_id', 'as': 'product'}},                
+                {'$unwind': {'path': '$product', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'product_categories', 'localField': 'product.product_category.$id', 'foreignField': '_id', 'as': 'product.product_category'}},                
+                {'$unwind': {'path': '$product.product_category', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'tables', 'localField': 'table.$id', 'foreignField': '_id', 'as': 'table'}},                
+                {'$unwind': {'path': '$table', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'table_states', 'localField': 'table.table_status.$id', 'foreignField': '_id', 'as': 'table.table_status'}},                
+                {'$unwind': {'path': '$table.table_status', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        'order': None,
+                        'table._id': table_id,
+                    }
+                },
+            ]
+
+            data = list(db_mongo_restaurant.order_details.aggregate(pipeline))
+            return data    
+
+        return None
+ 
+    @staticmethod
+    def insert(action = None, quantity = None, note = None, total = 0, product_id = None, table_id = None):
+        try:
+            if action == 'one':
+                document = {
+                    '_id': model_restaurant_next_count('order_detail_id'),
+                    'quantity': quantity,
+                    'note': note,
+                    'total': total,
+                    'regdate': datetime.utcnow(),
+                    'product': {'$ref': 'products', '$id': product_id},
+                    'table': {'$ref': 'tables', '$id': table_id},
+                    'order': None
+                }
+
+                db_mongo_restaurant.order_details.insert_one(document)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+    
+    @staticmethod
+    def update(action = None, table_id = None, total = 0):
+        try:
+            if action == 'all_order':
+                order_id = model_restaurant_orders.insert(action = 'one_order_id', total = total)
+                if order_id:
+                    document = {
+                        'table.$id': table_id,
+                        'order': None
+                    } 
+
+                    update = {
+                        '$set': {
+                            'order': {'$ref': 'orders', '$id': order_id},
+                        }
+                    }
+
+                    db_mongo_restaurant.order_details.update_many(document, update)
+                    return True
+            
+            return False
+        except Exception as e:
+            return False
+    
+    @staticmethod
+    def delete(action = None, order_detail_id = None):
+        try: 
+            if action == 'one':
+                document = {
+                    '_id': order_detail_id
+                } 
+
+                db_mongo_restaurant.order_details.delete_many(document)
+                
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+            

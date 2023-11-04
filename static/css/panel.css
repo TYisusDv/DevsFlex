@@ -438,6 +438,10 @@ p.footer {
   animation: preLoader 1s ease-in-out infinite alternate;
 }
 
+.card-table {
+  text-decoration: none;  
+}
+
 .card {
   display: flex;
   flex-direction: column;
@@ -541,6 +545,11 @@ p.footer {
   font-weight: 600;
   color: white !important;
   background: var(--danger);
+}
+
+
+.bg-danger i{
+  color: white !important;
 }
 
 .bg-outline-primary {
@@ -695,7 +704,7 @@ p.footer {
   color: var(--text-color-2);
 }
 
-.form-input input, .form-input select {
+.form-input input, .form-input select, .form-input textarea {
   padding: 5px 5px 5px 0px;
   background: transparent;
   border: none;
@@ -703,6 +712,11 @@ p.footer {
   width: 100%;
   font-size: 0.95em;
   font-weight: 600;
+}
+
+.form-input textarea {
+  height: 100px;
+  resize: none;
 }
 
 .form-input input[type="password"] {
@@ -757,6 +771,7 @@ p.footer {
   width: 100%;
   border-radius: 5px;
   box-sizing: border-box;
+  margin-bottom: 20px;
 }
 
 .alert.alert-danger {
@@ -864,6 +879,80 @@ input:checked + .slider {
 
 .switch200 input:checked + .slider {
   box-shadow: 0 0 0 2px red, 0 0 8px red;
+}
+
+.btn-table-product{
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 150px;
+  cursor: pointer;
+  border: 1px solid var(--bg-border);
+  border-radius: 10px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.btn-table-product:hover {
+  background: var(--primary);
+}
+
+.btn-table-product img {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 10px;
+}
+
+.btn-table-product .info {
+  display: flex;
+  flex-direction: column;
+}
+
+.btn-table-product .info p {
+  cursor: pointer;
+  text-align: center;
+}
+
+.btn-table-product:hover .info p {
+  color: white;
+}
+
+#productContent{
+  min-height: 80px;
+}
+
+#productContent .preloader-circle .loader-circle{
+  width: 40px;
+  height: 40px;
+}
+
+.cart-container ul, .order-details-container ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-container ul li, .order-details-container ul li {
+  padding: 10px;
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid var(--bg-border);
+  border-radius: 10px;
+}
+
+.cart-container ul li:hover, .order-details-container ul li:hover{
+  background: var(--primary);
+}
+
+.cart-container ul li i, .order-details-container ul li i {
+  color: #8d8d8d
+}
+
+.cart-container ul li:hover p, .cart-container ul li:hover h3, .cart-container ul li:hover i, .order-details-container ul li:hover p, .order-details-container ul li:hover h3, .order-details-container ul li:hover i {
+  color: white;
 }
 
 /* ANIMATIONS */

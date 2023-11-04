@@ -1,0 +1,10 @@
+{% for product in products %}
+<div class="btn-table-product" data-product-id="{{product._id}}" data-product-name="{{product.name}}" data-product-price="{{product.price}}" data-product-description="{{product.description}}">
+    <!--<img src="https://www.ncenet.com/wp-content/uploads/2020/04/No-image-found.jpg" alt="No img">-->
+    <div class="info">
+        <p class="fw-bold">{{product.product_category.name}}</p>
+        <p class="fw-500">{{product.name}}</p>
+        <p class="fw-bold mt-5px">${{product.price}}</p>
+    </div>
+</div>
+{% endfor %}

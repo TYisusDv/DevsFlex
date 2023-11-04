@@ -2,9 +2,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, send_file, jsonify
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_caching import Cache
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 from datetime import datetime, timedelta
 from passlib.hash import bcrypt
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
+from itsdangerous import URLSafeSerializer
 import json, uuid, requests, re, math, time, sys, random, shutil, os, base64, subprocess, psutil, glob, socket, string, html, secrets, hashlib, jwt
 
 config_hostname = socket.gethostname()
@@ -36,6 +39,8 @@ config_routes_nocache = [
 config_routes_restaurant = [
     '',
     'dashboard',
+    'app/tables',
+    'app/table',
     'manage/orders',
     'manage/order/types',
     'manage/order/type/add',

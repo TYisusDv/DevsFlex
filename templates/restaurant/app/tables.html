@@ -1,0 +1,23 @@
+<div class="d-flex no-wrap g-20 justify-content-space-between align-items-baseline">
+    <h1 class="mb-20px">Mesas</h1>
+    <ul class="web-routes">
+        <li>Camareros</li>
+        <li>/</li>
+        <li>Mesas</li>
+    </ul>
+</div>
+<div class="d-flex flex-wrap g-10">
+    {% for table in tables %}
+    <a href="/app/table?id={{table._id}}" class="card-table col-3">
+        <div class="card">
+            <div class="head d-flex justify-content-space-between">
+                <h1>{{table.name}}</h1>
+                <span class="badge {% if table.table_status._id == 1 %}bg-primary-opacity{% elif table.table_status._id == 2 %}bg-danger-opacity{% elif table.table_status._id == 3 %}bg-danger-opacity{% endif %}"><i class="fa fa-circle"></i> {{table.table_status.name}}</span>
+            </div>
+            <div class="body">
+
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>

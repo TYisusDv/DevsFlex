@@ -1,0 +1,547 @@
+<div class="d-flex flex-wrap w-100 align-items-center g-10"> 
+    <div class="d-flex w-100 g-20 no-wrap justify-content-space-between align-items-baseline">
+        <h1 class="mb-20px">{{item.name}}</h1>
+        <ul class="web-routes">
+            <li>Camareros</li>
+            <li>/</li>
+            <li>Mesas</li>
+            <li>/</li>
+            <li>{{item.name}}</li>
+        </ul>
+    </div>
+    <div class="d-flex w-100 g-20"> 
+        <div class="d-flex flex-direction-column col-8 g-20"> 
+            <div class="card">
+                <div class="head">
+                    <h1>Agregar</h1>
+                </div>
+                <div class="body" id="productTemp">
+                    <div class="d-flex flex-nowrap g-10 overflow-y-auto">
+                        <button class="btn btn-getproducts bg-primary-opacity mw-100px align-items-center" data-product-category-id="all"><i class="fa-solid fa-circle mr-5px" style="font-size: 10px;"></i> Todo</button>
+                        {% for product_category in product_categories%}
+                        <button class="btn btn-getproducts bg-primary mw-100px align-items-center" data-product-category-id="{{product_category._id}}"><i class="fa-solid fa-circle mr-5px" style="font-size: 10px;"></i> {{product_category.name}}</button>
+                        {% endfor %}
+                    </div> 
+                    <div class="d-flex g-10 mt-20px" id="productContent">
+                        
+                    </div>                             
+                </div>
+            </div>
+            <div class="card">
+                <div class="head">
+                    <h1>Carrito</h1>
+                </div>
+                <div class="body cart-container" id="cart-container-{{html_id}}">
+                                                        
+                </div>
+                <div class="footer">
+                    <button type="submit" class="btn bg-primary" id="productSend-{{html_id}}"><span><i class="fa-solid fa-paper-plane"></i> Enviar</span></button>
+                </div>
+            </div>
+        </div> 
+        <div class="d-flex col-4"> 
+            <div class="card" style="height: 380px;">
+                <div class="head">
+                    <h1>Pedidos</h1>
+                </div>
+                <div class="body overflow-x-auto order-details-container" id="order-details-container-{{html_id}}" style="height: 380px;">
+                                                    
+                </div>
+                <div class="footer justify-content-space-between">
+                    <div><h3>Total</h3> <p class="fw-500">$<span id="orderTotal">0</span></p></div>
+                    <button type="submit" class="btn bg-danger align-items-center" id="orderFin-{{html_id}}"><span style="color: white;"><i class="fa-solid fa-receipt mr-5px"></i> Finalizar</span></button>
+                </div>
+            </div>
+        </div>
+    </div> 
+</div> 
+<script>
+    var btnProductSend = $("#productSend-{{html_id}}").html();
+    var btnOrderFin = $("#orderFin-{{html_id}}").html();
+
+    $(document).ready(function () {
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            socket.emit('get_cart');
+            socket.emit('get_order_details', {table_id: '{{item._id}}'});
+        });
+
+        socket.on('update_cart', function(cart) {
+            var cartContainer = $('#cart-container-{{html_id}}');
+            cartContainer.empty();
+
+            for (var i = 0; i < cart.length; i++) {
+                var tableEntry = cart[i];
+                var tableId = tableEntry['table_id'];
+                
+                if(tableId == parseInt("{{item._id}}")){
+                    var productsList = $('<ul>');
+
+                    for (var j = 0; j < tableEntry['products'].length; j++) {
+                        var productEntry = tableEntry['products'][j];
+                        var cart_id = productEntry['cart_id'];
+                        var product_id = productEntry['product_id'];
+                        var product_name = productEntry['product_name'];
+                        var product_price = productEntry['product_price'];
+                        var quantity = productEntry['quantity'];
+                        var total = productEntry['total'];                        
+                        var product_category = productEntry['product_category'];
+                        var note = productEntry['note'];
+
+                        productsList.append($(`<li class="btn-table-edit" data-cart-id="${cart_id}" data-product-name="${product_name}" data-product-price="${product_price}" data-quantity="${quantity}" data-note="${note}">`).html(`
+                            <div class="d-flex flex-wrap g-10">
+                                <div class="d-flex align-items-center">
+                                    <i class="fa-solid fa-mug-saucer" style="font-size: 24px;"></i>
+                                </div>
+                                <div class="d-flex flex-direction-column">
+                                    <p class="fw-bold">${product_category}</p>
+                                    <p class="fw-500">${product_name}</p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <p class="fw-bold">$${product_price}</p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <p class="fw-500"><i class="fa-solid fa-x"></i></p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <p class="fw-bold">${quantity}</p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <p class="fw-500"><i class="fa-solid fa-equals"></i></p>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <h3 class="fw-bold">$${total}</h3>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <p class="fw-500">${note}</p>
+                                </div>
+                            </div>
+                        `));
+                    }
+
+                    cartContainer.append(productsList);
+                }
+            }
+
+            if(cartContainer.html() == "" || cartContainer.html() == "<ul></ul>"){
+                cartContainer.html("<h4>No hay productos en el carrito</h4>");
+            }
+        });
+
+        socket.on('update_order_details', function(order) {
+            var orderDetailsContainer = $('#order-details-container-{{html_id}}');
+            orderDetailsContainer.empty();
+            
+            var order_total = 0;
+
+            var productsList = $('<ul>');
+            for (var i = 0; i < order.length; i++) {
+                var productEntry = order[i]; 
+                var order_detail_id = productEntry['_id'];
+                var product_name = productEntry['product']['name'];
+                var product_price = productEntry['product']['price'];
+                var quantity = productEntry['quantity'];
+                var total = productEntry['total'];
+                order_total = order_total + total;
+                var product_category = productEntry['product']['product_category']['name'];
+                var note = productEntry['note'];
+
+                productsList.append($(`<li class="btn-table-order-detail" data-order-detail-id="${order_detail_id}" data-product-name="${product_name}" data-product-price="${product_price}" data-quantity="${quantity}" data-note="${note}">`).html(`
+                    <div class="d-flex flex-wrap g-10">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-mug-saucer" style="font-size: 24px;"></i>
+                        </div>
+                        <div class="d-flex flex-direction-column">
+                            <p class="fw-bold">${product_category}</p>
+                            <p class="fw-500">${product_name}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-bold">$${product_price}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500"><i class="fa-solid fa-x"></i></p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-bold">${quantity}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500"><i class="fa-solid fa-equals"></i></p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <h3 class="fw-bold">$${total}</h3>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500">${note}</p>
+                        </div>
+                    </div>
+                `));
+
+                orderDetailsContainer.append(productsList);
+            }
+            $("#orderTotal").html(order_total);
+
+            if(orderDetailsContainer.html() == "" || orderDetailsContainer.html() == "<ul></ul>"){
+                orderDetailsContainer.html("<h4>No hay productos en el pedido</h4>");
+            }
+        });
+
+        socket.on('error', function(data) {
+            console.log(data);
+        });
+
+        getProducts('all');
+
+        $(document).on("click", ".btn-getproducts", function(e){
+            $(".btn-getproducts").each(function() {                
+                $(this).removeClass("bg-primary-opacity");
+                $(this).addClass("bg-primary")
+            });
+
+            $(this).removeClass("bg-primary");
+            $(this).addClass("bg-primary-opacity");
+
+            var product_category_id = $(this).data("product-category-id");
+            getProducts(product_category_id);
+        });
+
+        $(document).on("click", ".btn-table-product", function(e){
+            var product_id = $(this).data("product-id");
+            var product_name = $(this).data("product-name");
+            var product_price = $(this).data("product-price");
+            var product_description = $(this).data("product-description");
+
+            Swal.fire({
+                title: '¿Desea agregar al carrito?',
+                icon: 'info',
+                html: `
+                    <div class="form-input">
+                        <i class="fa-solid fa-mug-saucer"></i>
+                        <input type="text" placeholder="Producto" value="${product_name}" disabled>
+                    </div>
+                    <div class="form-input">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <textarea placeholder="Descripcion" disabled>${product_description}</textarea>
+                    </div> 
+                    <div class="form-input">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        <input type="text" placeholder="Precio" value="${product_price}" disabled>
+                    </div>                       
+                    <div class="form-input">
+                        <i class="fa-solid fa-border-all"></i>
+                        <input type="number" placeholder="Cantidad" id="productQuantity">
+                    </div>   
+                    <div class="form-input">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <textarea placeholder="Nota" id="productNote"></textarea>
+                    </div> 
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#204ecf',
+                cancelButtonColor: '#df4759',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "add");
+                    formData.append("table_id", "{{item._id}}");
+                    formData.append("product_id", product_id);
+                    formData.append("quantity", $("#productQuantity").val());
+                    formData.append("note", $("#productNote").val());
+                    
+                    var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+
+        $(document).on("click", ".btn-table-edit", function(e){
+            var cart_id = $(this).data("cart-id");
+            var product_name = $(this).data("product-name");
+            var product_price = $(this).data("product-price");
+            var quantity = $(this).data("quantity");
+            var note = $(this).data("note");
+
+            Swal.fire({
+                title: '¿Desea editar el carrito?',
+                icon: 'info',
+                html: `
+                    <div class="form-input">
+                        <i class="fa-solid fa-mug-saucer"></i>
+                        <input type="text" placeholder="Producto" value="${product_name}" disabled>
+                    </div> 
+                    <div class="form-input">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        <input type="text" placeholder="Precio" value="${product_price}" disabled>
+                    </div>                       
+                    <div class="form-input">
+                        <i class="fa-solid fa-border-all"></i>
+                        <input type="number" placeholder="Cantidad" value="${quantity}" id="productQuantity">
+                    </div>   
+                    <div class="form-input">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <textarea placeholder="Nota" id="productNote">${note}</textarea>
+                    </div> 
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#204ecf',
+                cancelButtonColor: '#df4759',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "edit");
+                    formData.append("cart_id", cart_id);
+                    formData.append("quantity", $("#productQuantity").val());
+                    formData.append("note", $("#productNote").val());
+                    
+                    var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });     
+        
+        $(document).on("click", "#productSend-{{html_id}}", function(e){
+            var btn = $(this);
+        
+            api_loadloader(btn.find("span"), $("#preolader-circle").html(), btn, true, 100, 400);      
+
+            var formData = new FormData();   
+            
+            formData.append("action", "send");
+            formData.append("table_id", "{{item._id}}");
+            
+            var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
+            response.then(function (response) {
+                if(!response.success){
+                    Swal.fire(
+                        '¡Ocurrio un error!',
+                        response.msg,
+                        'error'
+                    );
+                    api_loadloader(btn.find("span"), btnProductSend, btn, false, 400, 400);
+                    return;
+                }            
+                
+                Swal.fire(
+                    '¡Exito!',
+                    response.msg,
+                    'success'
+                );
+                api_loadloader(btn.find("span"), btnProductSend, btn, false, 400, 400);
+                return;
+            }).catch(function (response) {
+                Swal.fire(
+                    '¡Ocurrio un error!',
+                    response.responseJSON.msg,
+                    'error'
+                );
+                api_loadloader(btn.find("span"), btnProductSend, btn, false, 400, 400);
+                return;
+            });
+        });
+
+        $(document).on("click", ".btn-table-order-detail", function(e){
+            var order_detail_id = $(this).data("order-detail-id");
+            var product_name = $(this).data("product-name");
+            var product_price = $(this).data("product-price");
+            var quantity = $(this).data("quantity");
+            var note = $(this).data("note");
+
+            Swal.fire({
+                title: '¿Desea cancelar el producto del pedido?',
+                icon: 'info',
+                html: `
+                    <div class="form-input">
+                        <i class="fa-solid fa-mug-saucer"></i>
+                        <input type="text" placeholder="Producto" value="${product_name}" disabled>
+                    </div> 
+                    <div class="form-input">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        <input type="text" placeholder="Precio" value="${product_price}" disabled>
+                    </div>                       
+                    <div class="form-input">
+                        <i class="fa-solid fa-border-all"></i>
+                        <input type="number" placeholder="Cantidad" value="${quantity}" disabled>
+                    </div>   
+                    <div class="form-input">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <textarea placeholder="Nota" id="productNote" disabled>${note}</textarea>
+                    </div> 
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#df4759',
+                cancelButtonColor: '#204ecf',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "delete");
+                    formData.append("order_detail_id", order_detail_id);
+                    formData.append("table_id", "{{item._id}}");
+                    
+                    var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+        
+        $(document).on("click", "#orderFin-{{html_id}}", function(e){
+            var btn = $(this);
+        
+            api_loadloader(btn.find("span"), $("#preolader-circle").html(), btn, true, 100, 400);      
+            
+            Swal.fire({
+                title: '¿Desea finalizar el pedido?',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#df4759',
+                cancelButtonColor: '#204ecf',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+            
+                    formData.append("action", "finish");
+                    formData.append("table_id", "{{item._id}}");
+                    
+                    var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            api_loadloader(btn.find("span"), btnOrderFin, btn, false, 400, 400);
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        api_loadloader(btn.find("span"), btnOrderFin, btn, false, 400, 400);
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        api_loadloader(btn.find("span"), btnOrderFin, btn, false, 400, 400);
+                        return;
+                    });
+                } else {
+                    api_loadloader(btn.find("span"), btnOrderFin, btn, false, 400, 400);
+                    return;
+                }
+            });
+        });
+
+    });
+
+    function getProducts(product_category_id){
+        $("#productContent").fadeOut(100, function () {
+            $(this).html($("#preolader-circle").html()).fadeIn(400);
+        });
+
+        var formData = new FormData();   
+
+        formData.append("action", "get_products");
+        formData.append("product_category_id", product_category_id)
+        
+        var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
+        response.then(function (response) {
+            if(!response.success){
+                $("#productTemp").prepend(api_alert({text: response.msg}));
+                return;
+            }            
+            
+            $("#productContent").fadeOut(100, function () {
+                $(this).html(response.html).fadeIn(400);
+            });
+            return;
+        }).catch(function (response) {
+            $("#productTemp").prepend(api_alert({text: response.responseJSON.msg}));
+            return;
+        });
+    }
+</script>

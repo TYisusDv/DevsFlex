@@ -6,9 +6,12 @@ app_restaurant.config['CACHE_TYPE'] = 'redis'
 app_restaurant.config['CACHE_REDIS_URL'] = 'redis://localhost:6379/0'
 app_restaurant.config['CACHE_DEFAULT_TIMEOUT'] = 300
 app_restaurant.secret_key = 'Secret_key_DevsFlex_1#9$0&2@'
+serializer = URLSafeSerializer(app_restaurant.secret_key)
 
 csrf = CSRFProtect()
 csrf.init_app(app_restaurant)
+CORS(app_restaurant)
+socketio = SocketIO(app_restaurant)
 #cache = Cache(app_restaurant)
 
 def main_sessionVerify():
@@ -38,6 +41,34 @@ def cache_enabled():
             return False
     
     return True
+
+def restaurant_get_cart():
+    cart_serialized = request.cookies.get('cart')
+
+    if cart_serialized:
+        cart = serializer.loads(cart_serialized)
+    else:
+        cart = []
+    
+    return cart
+
+def restaurant_get_order_details(data):
+    table_id = data.get('table_id')
+    order_details = model_restaurant_order_details.get(action = 'all_table', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+    for item in order_details:
+        item['regdate'] = config_convertDate(item['regdate'])
+    
+    return order_details
+
+@socketio.on('get_cart')
+def get_cart():
+    cart = restaurant_get_cart() 
+    emit('update_cart', cart)
+
+@socketio.on('get_order_details')
+def get_order_details(data):
+    order_details = restaurant_get_order_details(data)
+    emit('update_order_details', order_details)
 
 @app_restaurant.route('/', defaults={'path': ''})
 @app_restaurant.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])#@cache.cached(timeout = 300, unless = cache_enabled)
@@ -163,8 +194,199 @@ def main_web(path):
                         item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
 
                     data_count = model_restaurant_products.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)              
+                
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
+            #APP TABLES
+            elif request.method == 'GET' and path == 'api/web/widget/app/tables':
+                tables = model_restaurant_tables.get(action = 'all')
+                return jsonify({'success': True, 'html': render_template('/restaurant/app/tables.html', tables = tables)})    
+            elif request.method == 'GET' and path == 'api/web/widget/app/table':
+                param_id = v_requestArgs.get('id')
+                item = model_restaurant_tables.get(action = 'one', table_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                if item:
+                    html_id = str(uuid.uuid4())
+                    product_categories = model_restaurant_product_categories.get(action = 'all_status', status = True)
+                    return jsonify({'success': True, 'html': render_template('/restaurant/app/table.html', item = item, html_id = html_id, product_categories = product_categories)})    
+            elif request.method == 'POST' and path == 'api/web/data/app/table':
+                if v_action == 'get_products':
+                    product_category_id = v_requestForm.get('product_category_id')
+                    if product_category_id != 'all':
+                        item = model_restaurant_product_categories.get(action = 'one', product_category_id = int(product_category_id) if product_category_id and str(product_category_id).isnumeric() else None)
+                        if not item:
+                            return jsonify({'success': False, 'msg': 'Por favor, proporcione el id válido e inténtelo de nuevo.'}) 
+                        
+                        products = model_restaurant_products.get(action = 'all_category_status', status = True, product_category_id = int(product_category_id))
+                    else:
+                        products = model_restaurant_products.get(action = 'all_status', status = True)
+
+                    if not products:
+                        return jsonify({'success': True, 'msg': 'Consulta correcta.', 'html': '<h4>No se encontraron productos</h4>'})
+                    
+                    return jsonify({'success': True, 'msg': 'Consulta correcta.', 'html': render_template('/restaurant/app/widget/table_products.html', products = products)})
+                elif v_action == 'add':
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+
+                    product_id = v_requestForm.get('product_id')
+                    product = model_restaurant_products.get(action = 'one', product_id = int(product_id) if product_id and str(product_id).isnumeric() else None)
+                    if not product:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un producto válido e inténtelo de nuevo.'})
+                    
+                    quantity = v_requestForm.get('quantity')
+                    if not quantity or not config_isFloat(quantity) or float(quantity) <= 0:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una cantidad válida e inténtelo de nuevo.'})
+                    
+                    note = v_requestForm.get('note')
+                    if not quantity or note == '' or note == 'None' or note == 'null':
+                        note = 'N/A'
+
+                    table_id = int(table_id)
+                    product_id = int(product_id)
+                    product_name = product['name']
+                    product_price = float(product['price'])
+                    product_category = product['product_category']['name']
+                    quantity = float(quantity)
+                    cart_id = str(uuid.uuid4())
+
+                    cart = restaurant_get_cart()
+
+                    table_found = False
+                    for table_entry in cart:
+                        if table_entry['table_id'] == table_id:
+                            product_found = False
+                            # for product_entry in table_entry['products']:
+                            #     if product_entry['product_id'] == product_id:
+                            #         product_entry['quantity'] += quantity
+                            #         product_entry['total'] = product_entry['quantity'] * product_entry['product_price']
+                            #         product_found = True
+                            #         break
+
+                            if not product_found:
+                                table_entry['products'].append({'cart_id': cart_id, 'product_id': product_id, 'product_name': product_name, 'product_price': product_price, 'quantity': quantity, 'total': quantity * product_price, 'product_category': product_category, 'note': note})
+
+                            table_found = True
+                            break
+
+                    if not table_found:
+                        cart.append({'table_id': table_id, 'products': [{'cart_id': cart_id, 'product_id': product_id, 'product_name': product_name, 'product_price': product_price, 'quantity': quantity, 'total': quantity * product_price, 'product_category': product_category, 'note': note}]})
+
+                    cart_serialized = serializer.dumps(cart)
+
+                    response = make_response(jsonify({'success': True, 'msg': 'Se agregó correctamente.'}))
+                    response.set_cookie('cart', cart_serialized)   
+                    socketio.emit('update_cart', cart)
+                 
+                    return response
+                elif v_action == 'edit':
+                    cart_id = v_requestForm.get('cart_id')
+                    if not cart_id:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    quantity = v_requestForm.get('quantity')
+                    if not quantity or not config_isFloat(quantity) or float(quantity) < 0:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una cantidad válida e inténtelo de nuevo.'})
+
+                    note = v_requestForm.get('note')
+                    if not quantity or note == '' or note == 'None' or note == 'null':
+                        note = 'N/A'
+                    
+                    quantity = float(quantity)
+
+                    cart = restaurant_get_cart()
+                    
+                    for table_entry in cart:
+                        for product_entry in table_entry['products']:
+                            if product_entry['cart_id'] == cart_id:
+                                if quantity == 0:
+                                    table_entry['products'].remove(product_entry)
+                                else:
+                                    product_entry['quantity'] = quantity
+                                    product_entry['note'] = note
+                                    product_entry['total'] = product_entry['quantity'] * product_entry['product_price']
+
+                    cart_serialized = serializer.dumps(cart)
+                    response = make_response(jsonify({'success': True, 'msg': 'Se editó correctamente.'}))
+                    response.set_cookie('cart', cart_serialized)
+
+                    socketio.emit('update_cart', cart)
+                    return response
+                elif v_action == 'send':
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    table_id = int(table_id)
+
+                    cart = restaurant_get_cart()
+                    if not cart:
+                        return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
+                    
+                    for table_entry in cart:
+                        if table_entry['table_id'] == table_id:
+                            if not table_entry['products']:
+                                return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
+                    
+                            for product_entry in table_entry['products']:
+                                model_restaurant_order_details.insert(action = 'one', quantity = product_entry['quantity'], note = product_entry['note'], total = product_entry['total'], product_id = product_entry['product_id'], table_id = table_id)
+
+                            cart.remove(table_entry)
+
+                    cart_serialized = serializer.dumps(cart)
+                    response = make_response(jsonify({'success': True, 'msg': 'Se envió correctamente.'}))
+                    response.set_cookie('cart', cart_serialized)
+
+                    socketio.emit('update_cart', cart)
+                    order_details = restaurant_get_order_details({'table_id': table_id})
+                    socketio.emit('update_order_details', order_details)
+                    return response
+                elif v_action == 'delete':
+                    order_detail_id = v_requestForm.get('order_detail_id')
+                    order_detail = model_restaurant_order_details.get(action = 'one', order_detail_id = int(order_detail_id) if order_detail_id and str(order_detail_id).isnumeric() else None)
+                    if not order_detail:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una orden válida e inténtelo de nuevo.'})
+
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    table_id = int(table_id) 
+                    order_detail_id = int(order_detail_id) 
+
+                    delete = model_restaurant_order_details.delete(action = 'one', order_detail_id = order_detail_id)
+                    if not delete:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al eliminar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    order_details = restaurant_get_order_details({'table_id': table_id})
+                    socketio.emit('update_order_details', order_details)
+                    return jsonify({'success': True, 'msg': 'Se eliminó correctamente.'})   
+                elif v_action == 'finish':
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    table_id = int(table_id) 
+
+                    total = 0
+                    order_details = restaurant_get_order_details({'table_id': table_id})
+                    for item in order_details:
+                        total += item['total']
+
+                    if not order_details:
+                        return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
+                    
+                    update = model_restaurant_order_details.update(action = 'all_order', table_id = table_id, total = total)
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al finalizar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    order_details = restaurant_get_order_details({'table_id': table_id})
+                    socketio.emit('update_order_details', order_details)
+                    return jsonify({'success': True, 'msg': 'Se finalizó correctamente.'})     
             #ORDER TYPES
             elif request.method == 'GET' and path == 'api/web/widget/manage/order/types':
                 visible = model_restaurant_order_types.get(action = 'count_status', status = True)
@@ -663,4 +885,5 @@ def main_error_505(e):
     return render_template('/error.html', code = '404', msg = 'HTTP Version not supported.'), 505
 
 if __name__ == '__main__':
-    app_restaurant.run(host = '127.0.0.2', debug = config_app['debug'], port = 5001)
+    #app_restaurant.run(host = '127.0.0.2', debug = config_app['debug'], port = 5001)
+    socketio.run(app_restaurant, host = '127.0.0.2', port = 5001, debug = config_app['debug'])
