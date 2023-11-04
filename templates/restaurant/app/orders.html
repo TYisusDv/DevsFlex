@@ -1,0 +1,256 @@
+<div class="d-flex flex-wrap w-100 align-items-center g-10"> 
+    <div class="d-flex w-100 g-20 no-wrap justify-content-space-between align-items-baseline">
+        <h1 class="mb-20px">Ordenes</h1>
+        <ul class="web-routes">
+            <li>Cocineros</li>
+            <li>/</li>
+            <li>Ordenes</li>
+        </ul>
+    </div>
+    <div class="d-flex flex-wrap col-12 g-10"> 
+        {% for table in tables %}
+        <div class="d-flex flex-direction-column col-4">
+            <div class="card">
+                <div class="head">
+                    <h1>{{table.name}}</h1>
+                </div>
+                <div class="body" id="productTemp">
+                    <div class="d-flex justify-content-space-between">
+                        <h4>En proceso</h4>
+                        <button class="btn bg-danger btn-table-inprogress" data-table-id="{{table._id}}"><span><i class="fa-solid fa-flag-checkered"></i> Finalizar todo</span></button>
+                    </div>
+                    <div class="d-flex g-10 mt-10px cart-container table-inprogress-{{html_id}}" id="table-{{table._id}}-inprogress-{{html_id}}">
+                        <ul>
+                            <p style='font-size: 14px;'>No hay pedidos en proceso</p>
+                        </ul>   
+                    </div>   
+                    <div class="d-flex justify-content-space-between align-items-center mt-20px">
+                        <h4>Pendientes</h4>
+                        <button class="btn bg-primary btn-table-pending" data-table-id="{{table._id}}"><span><i class="fa-solid fa-upload"></i> Obtener todo</span></button>
+                    </div>
+                    <div class="d-flex g-10 mt-10px cart-container table-pending-{{html_id}}" id="table-{{table._id}}-pending-{{html_id}}">
+                        <ul>
+                            <p style='font-size: 14px;'>No hay pedidos pendientes</p>
+                        </ul>   
+                    </div>                             
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>        
+</div> 
+
+<script>
+    $(document).ready(function () {
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('connect', function() {
+            socket.emit('get_order_details_pending');
+            socket.emit('get_order_details_inprogress');
+        });
+        
+        socket.on('update_order_details_pending', function(orders) {
+            $(".table-pending-{{html_id}} ul").each(function() {
+                $(this).empty();
+            });    
+
+            for (var i = 0; i < orders.length; i++) {
+                var tableEntry = orders[i];
+                var productEntry = tableEntry['product'];
+
+                console.log(tableEntry)
+                var tableId = tableEntry['table']['_id']; 
+                var tableContainer = $(`#table-${tableId}-pending-{{html_id}} ul`);
+                //tableContainer.empty();
+
+                var product_id = productEntry['_id'];
+                var product_name = productEntry['name'];
+                var quantity = tableEntry['quantity'];
+                var product_category = productEntry['product_category']['name'];
+                var note = tableEntry['note'];
+
+                tableContainer.append($(`<li class="btn-table-edit">`).html(`
+                    <div class="d-flex flex-wrap g-10">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-mug-saucer" style="font-size: 24px;"></i>
+                        </div>
+                        <div class="d-flex flex-direction-column">
+                            <p class="fw-bold">${product_category}</p>
+                            <p class="fw-500">${product_name}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500"><i class="fa-solid fa-x"></i></p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-bold">${quantity}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500">${note}</p>
+                        </div>
+                    </div>
+                `)); 
+
+                if(tableContainer.html() == ""){
+                    tableContainer.html("<p style='font-size: 14px;'>No hay pedidos pendientes</p>");
+                }     
+            }
+
+            $(".table-pending-{{html_id}} ul").each(function() {
+                if($(this).html() == ""){
+                    $(this).html("<p style='font-size: 14px;'>No hay pedidos pendientes</p>");
+                }   
+            }); 
+        });
+
+        socket.on('update_order_details_inprogress', function(orders) {
+            $(".table-inprogress-{{html_id}} ul").each(function() {
+                $(this).empty();
+            });    
+
+            for (var i = 0; i < orders.length; i++) {
+                var tableEntry = orders[i];
+                var productEntry = tableEntry['product'];
+
+                console.log(tableEntry)
+                var tableId = tableEntry['table']['_id']; 
+                var tableContainer = $(`#table-${tableId}-inprogress-{{html_id}} ul`);
+                //tableContainer.empty();
+
+                var product_id = productEntry['_id'];
+                var product_name = productEntry['name'];
+                var quantity = tableEntry['quantity'];
+                var product_category = productEntry['product_category']['name'];
+                var note = tableEntry['note'];
+
+                tableContainer.append($(`<li class="btn-table-edit">`).html(`
+                    <div class="d-flex flex-wrap g-10">
+                        <div class="d-flex align-items-center">
+                            <i class="fa-solid fa-mug-saucer" style="font-size: 24px;"></i>
+                        </div>
+                        <div class="d-flex flex-direction-column">
+                            <p class="fw-bold">${product_category}</p>
+                            <p class="fw-500">${product_name}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500"><i class="fa-solid fa-x"></i></p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-bold">${quantity}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <p class="fw-500">${note}</p>
+                        </div>
+                    </div>
+                `)); 
+
+                if(tableContainer.html() == ""){
+                    tableContainer.html("<p style='font-size: 14px;'>No hay pedidos pendientes</p>");
+                }     
+            }
+
+            $(".table-inprogress-{{html_id}} ul").each(function() {
+                if($(this).html() == ""){
+                    $(this).html("<p style='font-size: 14px;'>No hay pedidos pendientes</p>");
+                }   
+            }); 
+        });
+
+        socket.on('error', function(data) {
+            console.log(data);
+        });
+
+        $(document).on("click", ".btn-table-pending", function(e){
+            var table_id = $(this).data("table-id");
+
+            Swal.fire({
+                title: '¿Desea obtener todo de la mesa para empezar la preparacion?',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#204ecf',
+                cancelButtonColor: '#df4759',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "ready");
+                    formData.append("table_id", table_id);
+                    
+                    var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+
+        $(document).on("click", ".btn-table-inprogress", function(e){
+            var table_id = $(this).data("table-id");
+
+            Swal.fire({
+                title: '¿Desea finalizar todo de la preparacion?',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#df4759',
+                cancelButtonColor: '#204ecf',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "finish");
+                    formData.append("table_id", table_id);
+                    
+                    var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+    });
+</script>

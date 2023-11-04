@@ -907,7 +907,7 @@ class model_restaurant_orders:
         
 class model_restaurant_order_details:
     @staticmethod
-    def get(action = None, order_detail_id = None, table_id = None, order_id = None):
+    def get(action = None, order_detail_id = None, table_id = None, order_id = None, status = 0):
         if action == 'one':
             data = db_mongo_restaurant.order_details.find_one({'_id': order_detail_id})
             return data  
@@ -955,11 +955,31 @@ class model_restaurant_order_details:
 
             data = list(db_mongo_restaurant.order_details.aggregate(pipeline))
             return data    
+        elif action == 'all_status':
+            pipeline = [
+                {'$lookup': {'from': 'products', 'localField': 'product.$id', 'foreignField': '_id', 'as': 'product'}},                
+                {'$unwind': {'path': '$product', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'product_categories', 'localField': 'product.product_category.$id', 'foreignField': '_id', 'as': 'product.product_category'}},                
+                {'$unwind': {'path': '$product.product_category', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'tables', 'localField': 'table.$id', 'foreignField': '_id', 'as': 'table'}},                
+                {'$unwind': {'path': '$table', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'table_states', 'localField': 'table.table_status.$id', 'foreignField': '_id', 'as': 'table.table_status'}},                
+                {'$unwind': {'path': '$table.table_status', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        'order': None,
+                        'status': status,
+                    }
+                }
+            ]
 
+            data = list(db_mongo_restaurant.order_details.aggregate(pipeline))
+            return data 
+        
         return None
  
     @staticmethod
-    def insert(action = None, price = None, quantity = None, note = None, total = 0, product_id = None, table_id = None, user_id = None):
+    def insert(action = None, price = None, quantity = None, note = None, total = 0, product_id = None, table_id = None, user_id = None, status = 0):
         try:
             if action == 'one':
                 document = {
@@ -968,6 +988,7 @@ class model_restaurant_order_details:
                     'quantity': quantity,
                     'note': note,
                     'total': total,
+                    'status': status,
                     'regdate': datetime.utcnow(),
                     'product': {'$ref': 'products', '$id': product_id},
                     'table': {'$ref': 'tables', '$id': table_id},
@@ -983,7 +1004,7 @@ class model_restaurant_order_details:
             return False
     
     @staticmethod
-    def update(action = None, order_id = None, table_id = None, total = 0, user_id = None):
+    def update(action = None, order_id = None, table_id = None, total = 0, user_id = None, status_search = None, status_update = None):
         try:
             if action == 'all_order':
                 insert = model_restaurant_orders.insert(action = 'one_order_id', order_id = order_id, total = total, user_id = user_id)
@@ -1001,6 +1022,21 @@ class model_restaurant_order_details:
 
                     db_mongo_restaurant.order_details.update_many(document, update)
                     return True
+            elif action == 'all_status':
+                document = {
+                    'table.$id': table_id,
+                    'order': None,
+                    'status': status_search
+                } 
+
+                update = {
+                    '$set': {
+                        'status': status_update
+                    }
+                }
+
+                db_mongo_restaurant.order_details.update_many(document, update)
+                return True
             
             return False
         except Exception as e:

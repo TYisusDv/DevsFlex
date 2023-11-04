@@ -61,6 +61,14 @@ def restaurant_get_order_details(data):
     
     return order_details
 
+def restaurant_get_order_details_status(status):
+    order_details = model_restaurant_order_details.get(action = 'all_status', status = status)
+    for item in order_details:
+        item['regdate'] = config_convertDate(item['regdate'])
+    
+    return order_details
+
+
 @socketio.on('get_cart')
 def get_cart():
     cart = restaurant_get_cart() 
@@ -70,6 +78,16 @@ def get_cart():
 def get_order_details(data):
     order_details = restaurant_get_order_details(data)
     emit('update_order_details', order_details)
+
+@socketio.on('get_order_details_pending')
+def get_order_details_pending():
+    orders = restaurant_get_order_details_status(0) 
+    emit('update_order_details_pending', orders)
+
+@socketio.on('get_order_details_inprogress')
+def get_order_details_inprogress():
+    orders = restaurant_get_order_details_status(1) 
+    emit('update_order_details_inprogress', orders)
 
 @app_restaurant.route('/app/table/ticket', methods=['GET'])
 def app_table_ticket():
@@ -234,6 +252,47 @@ def main_web(path):
                 
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
+            #APP ORDERS
+            elif request.method == 'GET' and path == 'api/web/widget/app/orders':
+                html_id = str(uuid.uuid4())
+                tables = model_restaurant_tables.get(action = 'all')
+                return jsonify({'success': True, 'html': render_template('/restaurant/app/orders.html', tables = tables, html_id = html_id)})    
+            elif request.method == 'POST' and path == 'api/web/data/app/orders':
+                if v_action == 'ready':
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    table_id = int(table_id)
+
+                    update = model_restaurant_order_details.update(action = 'all_status', table_id = table_id, status_search = 0, status_update = 1)
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al actualizar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    orders = restaurant_get_order_details_status(0) 
+                    socketio.emit('update_order_details_pending', orders)
+                    orders = restaurant_get_order_details_status(1) 
+                    socketio.emit('update_order_details_inprogress', orders)
+                    return jsonify({'success': True, 'msg': 'Se actualizó correctamente.'})            
+                elif v_action == 'finish':
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    table_id = int(table_id)
+
+                    update = model_restaurant_order_details.update(action = 'all_status', table_id = table_id, status_search = 1, status_update = 2)
+                    if not update:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al actualizar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    orders = restaurant_get_order_details_status(0) 
+                    socketio.emit('update_order_details_pending', orders)
+                    orders = restaurant_get_order_details_status(1) 
+                    socketio.emit('update_order_details_inprogress', orders)
+                    return jsonify({'success': True, 'msg': 'Se actualizó correctamente.'})   
+            
             #APP TABLES
             elif request.method == 'GET' and path == 'api/web/widget/app/tables':
                 tables = model_restaurant_tables.get(action = 'all')
@@ -366,7 +425,7 @@ def main_web(path):
                                 return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
                     
                             for product_entry in table_entry['products']:
-                                model_restaurant_order_details.insert(action = 'one', price = product_entry['product_price'], quantity = product_entry['quantity'], note = product_entry['note'], total = product_entry['total'], product_id = product_entry['product_id'], table_id = table_id, user_id = v_user_id)
+                                model_restaurant_order_details.insert(action = 'one', price = product_entry['product_price'], quantity = product_entry['quantity'], note = product_entry['note'], total = product_entry['total'], product_id = product_entry['product_id'], table_id = table_id, user_id = v_user_id, status = 0)
 
                             cart.remove(table_entry)
 
@@ -376,6 +435,8 @@ def main_web(path):
                     socketio.emit('update_cart', cart)
                     order_details = restaurant_get_order_details({'table_id': table_id})
                     socketio.emit('update_order_details', order_details)
+                    orders = restaurant_get_order_details_status(0) 
+                    socketio.emit('update_order_details_pending', orders)
                     return response
                 elif v_action == 'delete':
                     order_detail_id = v_requestForm.get('order_detail_id')
@@ -383,6 +444,9 @@ def main_web(path):
                     if not order_detail:
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione una orden válida e inténtelo de nuevo.'})
 
+                    if order_detail['status'] == 1 or order_detail['status'] == 2:
+                        return jsonify({'success': False, 'msg': 'No se pudo eliminar, el motivo es que ya fue preparado o esta en proceso.'})
+                    
                     table_id = v_requestForm.get('table_id')
                     table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
                     if not table:
@@ -397,6 +461,8 @@ def main_web(path):
                     
                     order_details = restaurant_get_order_details({'table_id': table_id})
                     socketio.emit('update_order_details', order_details)
+                    orders = restaurant_get_order_details_status(0) 
+                    socketio.emit('update_order_details_pending', orders)
                     return jsonify({'success': True, 'msg': 'Se eliminó correctamente.'})   
                 elif v_action == 'finish':
                     table_id = v_requestForm.get('table_id')
@@ -409,7 +475,11 @@ def main_web(path):
                     total = 0
                     order_details = restaurant_get_order_details({'table_id': table_id})
                     for item in order_details:
-                        total += item['total']
+                        print(item['status'])
+                        if item['status'] == 0 or item['status'] == 1:
+                            return jsonify({'success': False, 'msg': 'No se pudo finalizar, el motivo es que aun hay pedidos pendientes o en proceso.'})
+
+                        total += item['total']                    
 
                     if not order_details:
                         return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
@@ -422,6 +492,7 @@ def main_web(path):
                     order_details = restaurant_get_order_details({'table_id': table_id})
                     socketio.emit('update_order_details', order_details)
                     return jsonify({'success': True, 'msg': 'Se finalizó correctamente.', 'ticket': order_id})     
+           
             #ORDER TYPES
             elif request.method == 'GET' and path == 'api/web/widget/manage/order/types':
                 visible = model_restaurant_order_types.get(action = 'count_status', status = True)

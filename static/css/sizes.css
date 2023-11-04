@@ -167,6 +167,10 @@
     align-items: baseline
 }
 
+.align-items-flex-end {
+    align-items: flex-end
+}
+
 .g-5 {
     gap: 5px;
 }
@@ -201,6 +205,10 @@
 
 .g-10 .col-3 {
     width: calc((100% - 30px) / 4);
+}
+
+.g-10 .col-4 {
+    width: calc((100% - 20px) / 3);
 }
 
 .col-12 {

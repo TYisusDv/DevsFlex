@@ -39,6 +39,7 @@ config_routes_nocache = [
 config_routes_restaurant = [
     '',
     'dashboard',
+    'app/orders',
     'app/tables',
     'app/table',
     'manage/orders',
