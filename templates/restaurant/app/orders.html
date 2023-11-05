@@ -56,20 +56,20 @@
 
             for (var i = 0; i < orders.length; i++) {
                 var tableEntry = orders[i];
+                var order_detail_id = tableEntry['_id'];
                 var productEntry = tableEntry['product'];
 
-                console.log(tableEntry)
                 var tableId = tableEntry['table']['_id']; 
                 var tableContainer = $(`#table-${tableId}-pending-{{html_id}} ul`);
-                //tableContainer.empty();
 
                 var product_id = productEntry['_id'];
                 var product_name = productEntry['name'];
+                var product_price = tableEntry['price'];
                 var quantity = tableEntry['quantity'];
                 var product_category = productEntry['product_category']['name'];
                 var note = tableEntry['note'];
 
-                tableContainer.append($(`<li class="btn-table-edit">`).html(`
+                tableContainer.append($(`<li class="btn-1-table-pending" data-order-datail-id="${order_detail_id}" data-table-id="${tableId}" data-product-name="${product_name}" data-product-price="${product_price}" data-quantity="${quantity}" data-note="${note}">`).html(`
                     <div class="d-flex flex-wrap g-10">
                         <div class="d-flex align-items-center">
                             <i class="fa-solid fa-mug-saucer" style="font-size: 24px;"></i>
@@ -109,20 +109,20 @@
 
             for (var i = 0; i < orders.length; i++) {
                 var tableEntry = orders[i];
+                var order_detail_id = tableEntry['_id'];
                 var productEntry = tableEntry['product'];
 
-                console.log(tableEntry)
                 var tableId = tableEntry['table']['_id']; 
                 var tableContainer = $(`#table-${tableId}-inprogress-{{html_id}} ul`);
-                //tableContainer.empty();
 
                 var product_id = productEntry['_id'];
                 var product_name = productEntry['name'];
+                var product_price = tableEntry['price'];
                 var quantity = tableEntry['quantity'];
                 var product_category = productEntry['product_category']['name'];
                 var note = tableEntry['note'];
 
-                tableContainer.append($(`<li class="btn-table-edit">`).html(`
+                tableContainer.append($(`<li class="btn-1-table-inprogress" data-order-datail-id="${order_detail_id}" data-table-id="${tableId}" data-product-name="${product_name}" data-product-price="${product_price}" data-quantity="${quantity}" data-note="${note}">`).html(`
                     <div class="d-flex flex-wrap g-10">
                         <div class="d-flex align-items-center">
                             <i class="fa-solid fa-mug-saucer" style="font-size: 24px;"></i>
@@ -164,7 +164,7 @@
 
             Swal.fire({
                 title: '¿Desea obtener todo de la mesa para empezar la preparacion?',
-                icon: 'info',
+                icon: 'info',                
                 showCancelButton: true,
                 confirmButtonColor: '#204ecf',
                 cancelButtonColor: '#df4759',
@@ -175,6 +175,77 @@
                     var formData = new FormData();   
 
                     formData.append("action", "ready");
+                    formData.append("table_id", table_id);
+                    
+                    var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+
+        $(document).on("click", ".btn-1-table-pending", function(e){
+            var order_detail_id = $(this).data("order-datail-id");
+            var table_id = $(this).data("table-id");
+            var product_name = $(this).data("product-name");
+            var product_price = $(this).data("product-price");
+            var quantity = $(this).data("quantity");
+            var note = $(this).data("note");
+
+            Swal.fire({
+                title: '¿Desea obtener este producto para empezar la preparacion?',
+                icon: 'info',
+                html: `
+                    <div class="form-input">
+                        <i class="fa-solid fa-mug-saucer"></i>
+                        <input type="text" placeholder="Producto" value="${product_name}" disabled>
+                    </div> 
+                    <div class="form-input">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        <input type="text" placeholder="Precio" value="${product_price}" disabled>
+                    </div>                       
+                    <div class="form-input">
+                        <i class="fa-solid fa-border-all"></i>
+                        <input type="number" placeholder="Cantidad" value="${quantity}" disabled>
+                    </div>   
+                    <div class="form-input">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <textarea placeholder="Nota" disabled>${note}</textarea>
+                    </div> 
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#204ecf',
+                cancelButtonColor: '#df4759',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "one_ready");
+                    formData.append("order_detail_id", order_detail_id);
                     formData.append("table_id", table_id);
                     
                     var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});
@@ -222,6 +293,129 @@
                     var formData = new FormData();   
 
                     formData.append("action", "finish");
+                    formData.append("table_id", table_id);
+                    
+                    var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+
+        $(document).on("click", ".btn-1-table-inprogress", function(e){
+            var order_detail_id = $(this).data("order-datail-id");
+            var table_id = $(this).data("table-id");
+            var product_name = $(this).data("product-name");
+            var product_price = $(this).data("product-price");
+            var quantity = $(this).data("quantity");
+            var note = $(this).data("note");
+
+            Swal.fire({
+                title: '¿Desea finalizar este producto de la preparacion?',
+                icon: 'info',
+                html: `
+                    <div class="form-input">
+                        <i class="fa-solid fa-mug-saucer"></i>
+                        <input type="text" placeholder="Producto" value="${product_name}" disabled>
+                    </div> 
+                    <div class="form-input">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        <input type="text" placeholder="Precio" value="${product_price}" disabled>
+                    </div>                       
+                    <div class="form-input">
+                        <i class="fa-solid fa-border-all"></i>
+                        <input type="number" placeholder="Cantidad" value="${quantity}" disabled>
+                    </div>   
+                    <div class="form-input">
+                        <i class="fa-solid fa-list-ul"></i>
+                        <textarea placeholder="Nota" disabled>${note}</textarea>
+                    </div>
+                    <div class="form-input">
+                        <button class="btn bg-danger btn-1-table-delete w-100" data-order-datail-id="${order_detail_id}" data-table-id="${table_id}"><span><i class="fa-solid fa-trash"></i> Cancelar pedido</span></button>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: '#99cc33',
+                cancelButtonColor: '#204ecf',
+                confirmButtonText: 'Finalizar pedido',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "one_finish");
+                    formData.append("order_detail_id", order_detail_id);
+                    formData.append("table_id", table_id);
+                    
+                    var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        return;
+                    });
+                }
+            });
+        });
+
+        $(document).on("click", ".btn-1-table-delete", function(e){
+            var order_detail_id = $(this).data("order-datail-id");
+            var table_id = $(this).data("table-id");
+
+            Swal.fire({
+                title: '¿Estas seguro/a de que quieres cancelar el producto?',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#df4759',
+                cancelButtonColor: '#204ecf',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "one_delete");
+                    formData.append("order_detail_id", order_detail_id);
                     formData.append("table_id", table_id);
                     
                     var response = api_sendData({url: "data/app/orders", type: "POST", formData: formData});

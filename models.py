@@ -1004,7 +1004,7 @@ class model_restaurant_order_details:
             return False
     
     @staticmethod
-    def update(action = None, order_id = None, table_id = None, total = 0, user_id = None, status_search = None, status_update = None):
+    def update(action = None, order_detail_id = None, order_id = None, table_id = None, total = 0, user_id = None, status_search = None, status_update = None):
         try:
             if action == 'all_order':
                 insert = model_restaurant_orders.insert(action = 'one_order_id', order_id = order_id, total = total, user_id = user_id)
@@ -1024,6 +1024,22 @@ class model_restaurant_order_details:
                     return True
             elif action == 'all_status':
                 document = {
+                    'table.$id': table_id,
+                    'order': None,
+                    'status': status_search
+                } 
+
+                update = {
+                    '$set': {
+                        'status': status_update
+                    }
+                }
+
+                db_mongo_restaurant.order_details.update_many(document, update)
+                return True
+            elif action == 'one_status':
+                document = {
+                    '_id': order_detail_id,
                     'table.$id': table_id,
                     'order': None,
                     'status': status_search
