@@ -13,10 +13,23 @@
                 {{total}}
             </div>
             <div class="icon">
-                <i class="fa-solid fa-timeline"></i>
+                <i class="fa-solid fa-receipt"></i>
             </div>
             <div class="col-12 pt-10px">
                 <p>TOTAL</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="card-number flex-wrap">
+            <div class="number">
+                ${{total_gen}}
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-dollar"></i>
+            </div>
+            <div class="col-12 pt-10px">
+                <p>TOTAL GENERADO</p>
             </div>
         </div>
     </div>
@@ -27,8 +40,11 @@
             <thead>
                 <tr>
                     <th>Acciones</th>
-                    <th>Nombre</th>
-                    <th>Status</th>
+                    <th>#</th>
+                    <th>ID</th>                    
+                    <th>Total</th>
+                    <th>Empleado</th>
+                    <th>Fecha de registro</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,11 +56,14 @@
     $(document).ready(function() {
         var table = api_dataTable(
             "#myTable",
-            "manage_order_types", 
+            "manage_orders", 
             [
                 {data: "actions"},
-                {data: "name"},
-                {data: "status"}
+                {data: "no"},
+                {data: "_id"},
+                {data: "total"},
+                {data: "user"},
+                {data: "regdate"}
             ]
         );        
     });

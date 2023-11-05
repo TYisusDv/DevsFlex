@@ -879,10 +879,71 @@ class model_restaurant_products:
 
 class model_restaurant_orders:
     @staticmethod
-    def get(action = None, order_id = None):
+    def get(action = None, order_id = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc'):
         if action == 'one':
             data = db_mongo_restaurant.orders.find_one({'_id': order_id})
             return data         
+        elif action == 'all_sum_total':
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": None,
+                        "total": {
+                            "$sum": "$total"
+                        }
+                    }
+                }
+            ]
+
+            data = list(db_mongo_restaurant.orders.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count          
+        elif action == 'all_table':
+            pipeline = [
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'no': int(search) if search and str(search).isnumeric() else None},
+                            {'regdate': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'user': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$skip': start},
+                {'$limit': length}
+            ]
+
+            data = list(db_mongo_restaurant.orders.aggregate(pipeline))
+            return data
+        elif action == 'all_table_count':
+            pipeline = [
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'no': int(search) if search and str(search).isnumeric() else None},
+                            {'regdate': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'user': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.orders.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count 
+        elif action == 'all_count':
+            pipeline = [
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.orders.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count  
 
         return None
  

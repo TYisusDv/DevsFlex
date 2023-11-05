@@ -249,6 +249,18 @@ def main_web(path):
                         item['status'] = '<span class="badge bg-primary-opacity"><i class="fa fa-circle"></i> Visible</span>' if item.get('status') else '<span class="badge bg-danger-opacity"><i class="fa fa-circle"></i> Oculto</span>'
 
                     data_count = model_restaurant_products.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)              
+                elif v_action == 'manage_orders':
+                    data = model_restaurant_orders.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        user = model_main_users.get(action = 'one', user_id = item['user'])
+
+                        item['actions'] = f'<div class="table-actions"><a href="/app/table/ticket?id={item["_id"]}" type="_blank" class="btn-sm bg-outline-primary"><i class="fa-solid fa-receipt"></i></a></div>'
+                        item['no'] = f'<span class="badge bg-primary">{item["no"]}</span>'
+                        item['total'] = f'<span class="badge bg-primary">${item["total"]}</span>'
+                        item['user'] = f'{user["person"]["name"]} {user["person"]["surname"]}'
+                        item['regdate'] = f'<span class="badge bg-primary">{config_convertDate(item["regdate"])}</span>'
+                        
+                    data_count = model_restaurant_orders.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
                 
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
@@ -977,11 +989,9 @@ def main_web(path):
             
             #ORDERS
             elif request.method == 'GET' and path == 'api/web/widget/manage/orders':
-                visible = model_restaurant_order_types.get(action = 'count_status', status = True)
-                hidden = model_restaurant_order_types.get(action = 'count_status', status = False)
-                total = visible + hidden
-
-                return jsonify({'success': True, 'html': render_template('/restaurant/manage/orders.html', total = total, visible = visible, hidden = hidden)})    
+                total = model_restaurant_orders.get(action = 'all_count')
+                total_gen = model_restaurant_orders.get(action = 'all_sum_total')
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/orders.html', total = total, total_gen = total_gen)})    
            
         if request.method == 'POST' and v_config_splitList[0] == 'api':
             return jsonify({'success': True, 'code': 'S404', 'msg': 'Página no encontrada.'}), 404
