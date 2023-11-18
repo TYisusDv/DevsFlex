@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DevsFlex Restaurant - Ticket</title>
+    <style>
+        @page {
+            size: 57.5mm; 
+            margin: 0; 
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" href="{{config_app.url_restaurant}}/assets/css/ticket.css?v=1.0.0">    
+</head>
+<body>
+  <div class="ticket">
+    <div class="logo">
+      <img src="{{config_app.url_restaurant}}/assets/images/chef.png" alt="DevsFlex Restaurant">
+    </div>
+    <div class="info">
+      <p><strong>DevsFlex Restaurant</strong></p>
+      <p>Calle Santa Maria del Valle #2</p>
+      <p><strong>RFC:</strong> N/A</p>
+      <p><strong>Tel:</strong> 3481468309</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Pedido</th>
+          <th>Total</th>
+          <th>Empleado</th>
+          <th>Fecha de registro</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in orders %}
+        <tr>
+          <td>{{item.no}}</td>
+          <td>{{item._id}}</td>
+          <td>${{item.total}}</td>
+          <td>{{item.user}}</td>
+          <td>{{item.regdate}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>  
+</body>
+</html>

@@ -9,7 +9,7 @@ app_restaurant.secret_key = 'Secret_key_DevsFlex_1#9$0&2@'
 serializer = URLSafeSerializer(app_restaurant.secret_key)
 
 csrf = CSRFProtect()
-csrf.init_app(app_restaurant)
+csrf.init_app(app_restaurant)                                           
 CORS(app_restaurant)
 socketio = SocketIO(app_restaurant)
 #cache = Cache(app_restaurant)
@@ -68,7 +68,6 @@ def restaurant_get_order_details_status(status):
     
     return order_details
 
-
 @socketio.on('get_cart')
 def get_cart():
     cart = restaurant_get_cart() 
@@ -125,6 +124,54 @@ def app_table_ticket():
     
     return render_template('/error.html', code = '404', msg = 'Página no encontrada.'), 404
 
+@app_restaurant.route('/manage/orders/export/pdf', methods=['GET'])
+def manage_orders_export_pdf():
+    orders = model_restaurant_orders.get(action = 'all_table', start = 0, length = 999999, search = None, order_column = 'regdate', order_direction = 'desc')
+    for item in orders:
+        user = model_main_users.get(action = 'one', user_id = item['user'])
+        item['user'] = f'{user["person"]["name"]} {user["person"]["surname"]}'
+        item['regdate'] = config_convertDate(item['regdate'])
+
+    options = {
+        'encoding': 'UTF-8',
+        'margin-top': '0mm',
+        'margin-right': '0mm',
+        'margin-bottom': '0mm',
+        'margin-left': '0mm',
+        'enable-local-file-access': ''
+    }
+
+    pdf_bytes = pdfkit.from_string(render_template('/restaurant/manage/export/orders.html', config_app = config_app, orders = orders), False, options = options)
+
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=Pedidos.pdf'
+
+    #return render_template('/restaurant/app/table/ticket.html', config_app = config_app, order = order, order_id = order_id, order_regdate = order_regdate, order_details = order_details)
+    return response
+
+@app_restaurant.route('/manage/products/export/pdf', methods=['GET'])
+def manage_products_export_pdf():
+    products = model_restaurant_products.get(action = 'all_table', start = 0, length = 999999, search = None, order_column = '_id', order_direction = 'asc')
+    print(products)
+    options = {
+        'encoding': 'UTF-8',
+        'margin-top': '0mm',
+        'margin-right': '0mm',
+        'margin-bottom': '0mm',
+        'margin-left': '0mm',
+        'enable-local-file-access': ''
+    }
+
+    pdf_bytes = pdfkit.from_string(render_template('/restaurant/manage/export/products.html', config_app = config_app, products = products), False, options = options)
+
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=Productos.pdf'
+
+    #return render_template('/restaurant/app/table/ticket.html', config_app = config_app, order = order, order_id = order_id, order_regdate = order_regdate, order_details = order_details)
+    return response
+    
 @app_restaurant.route('/', defaults={'path': ''})
 @app_restaurant.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])#@cache.cached(timeout = 300, unless = cache_enabled)
 def main_web(path):    

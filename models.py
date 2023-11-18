@@ -900,6 +900,8 @@ class model_restaurant_orders:
             return count          
         elif action == 'all_table':
             pipeline = [
+                {'$lookup': {'from': 'order_details', 'localField': '_id', 'foreignField': '_id', 'as': 'order_details'}},                
+                {'$unwind': {'path': '$order_details', 'preserveNullAndEmptyArrays': True}},
                 {
                     '$match': {
                         '$or': [
