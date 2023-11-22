@@ -1,0 +1,109 @@
+<div class="d-flex no-wrap g-20 justify-content-space-between align-items-baseline">
+    <h1 class="mb-20px">Administración de reservaciones</h1>
+    <ul class="web-routes">
+        <li>Administrar</li>
+        <li>/</li>
+        <li>Reservaciones</li>
+    </ul>
+</div>
+<div class="d-flex g-20">
+    <div class="col-4">
+        <div class="card-number flex-wrap">
+            <div class="number">
+                {{total}}
+            </div>
+            <div class="icon">
+                <i class="fa-solid fa-person-chalkboard"></i>
+            </div>
+            <div class="col-12 pt-10px">
+                <p>TOTAL</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="d-flex mt-20px justify-content-flex-end">
+    <a href="/manage/table/reservations/add" class="btn bg-primary"><i class="fa-solid fa-plus mr-5px"></i> Agregar</a>
+</div>
+<div class="d-flex mt-10px">
+    <div class="table-responsive">
+        <table id="myTable" class="display" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Acciones</th>
+                    <th>Mesa</th>
+                    <th>Cliente</th>
+                    <th>Nota</th>
+                    <th>Fecha y hora</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        var table = api_dataTable(
+            "#myTable",
+            "manage_table_reservations", 
+            [
+                {data: "actions"},
+                {data: "table.name"},
+                {data: "person_format"},
+                {data: "note"},
+                {data: "date"}
+            ]
+        );    
+        
+        $(document).on("click", ".btn-delete", function(e){
+            e.preventDefault();
+
+            var table_reservation_id = $(this).data('table-reservation-id');
+
+            Swal.fire({
+                title: '¿Desea eliminar la reservacion?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#204ecf',
+                cancelButtonColor: '#df4759',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {                                     
+                    var formData = new FormData();   
+
+                    formData.append("action", "delete");
+                    formData.append("table_reservation_id", table_reservation_id);                    
+                    
+                    var response = api_sendData({url: "data/manage/table/reservations", type: "POST", formData: formData});
+                    response.then(function (response) {
+                        if(!response.success){
+                            Swal.fire(
+                                '¡Ocurrio un error!',
+                                response.msg,
+                                'error'
+                            );
+                            return;
+                        }            
+                        
+                        Swal.fire(
+                            '¡Exito!',
+                            response.msg,
+                            'success'
+                        );
+                        table.ajax.reload();
+                        return;
+                    }).catch(function (response) {
+                        Swal.fire(
+                            '¡Ocurrio un error!',
+                            response.responseJSON.msg,
+                            'error'
+                        );
+                        table.ajax.reload();
+                        return;
+                    });
+                }
+            });
+        });
+    });
+</script>

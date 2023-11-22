@@ -469,6 +469,12 @@
             Swal.fire({
                 title: '¿Desea finalizar el pedido?',
                 icon: 'info',
+                html: `
+                    <div class="form-input">
+                        <i class="fa-solid fa-dollar"></i>
+                        <input type="text" placeholder="Con cuanto pago?" id="tablePay">
+                    </div>
+                `,
                 showCancelButton: true,
                 confirmButtonColor: '#df4759',
                 cancelButtonColor: '#204ecf',
@@ -480,6 +486,7 @@
             
                     formData.append("action", "finish");
                     formData.append("table_id", "{{item._id}}");
+                    formData.append("pay", $("#tablePay").val());
                     
                     var response = api_sendData({url: "data/app/table", type: "POST", formData: formData});
                     response.then(function (response) {

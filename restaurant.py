@@ -100,7 +100,7 @@ def app_table_ticket():
         order_details = model_restaurant_order_details.get(action = 'all_order', order_id = order_id)
         
         num_lines = len(order_details)
-        page_height = 110 + (num_lines * 7)
+        page_height = 120 + (num_lines * 7)
 
         options = {
             'encoding': 'UTF-8',
@@ -308,7 +308,16 @@ def main_web(path):
                         item['regdate'] = f'<span class="badge bg-primary">{config_convertDate(item["regdate"])}</span>'
                         
                     data_count = model_restaurant_orders.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)
-                
+                elif v_action == 'manage_table_reservations':
+                    data = model_restaurant_table_reservations.get(action = 'all_table', start = int(start), length = int(length), search = search, order_column = order_column, order_direction = order_direction)
+                    for item in data:
+                        item['table']['name'] = f'<span class="badge bg-primary">{item["table"]["name"]}</span>'
+                        item['person_format'] = f'{item["customer"]["person"]["name"]} {item["customer"]["person"]["surname"]}'
+                        item['date'] = f'<span class="badge bg-primary">{config_convertLocalDate(item["date"])}</span>'
+                        item['actions'] = f'<div class="table-actions"><a href="javascript:;" class="btn-sm bg-outline-danger btn-delete" data-table-reservation-id="{item["_id"]}"><i class="fa-solid fa-trash"></i></a></div>'
+
+                    data_count = model_restaurant_table_reservations.get(action = 'all_table_count', search = search, order_column = order_column, order_direction = order_direction)             
+            
                 return jsonify({'success': True, 'data': data, 'recordsTotal': data_count, 'recordsFiltered': data_count})
             
             #APP ORDERS
@@ -427,9 +436,13 @@ def main_web(path):
                     return jsonify({'success': True, 'msg': 'Se eliminó correctamente.'})  
                 
             #APP TABLES
-            elif request.method == 'GET' and path == 'api/web/widget/app/tables':
+            elif request.method == 'GET' and path == 'api/web/widget/app/tables':                
                 tables = model_restaurant_tables.get(action = 'all')
-                return jsonify({'success': True, 'html': render_template('/restaurant/app/tables.html', tables = tables)})    
+                reservations = model_restaurant_table_reservations.get(action = 'all_table_today')
+
+                datetime_now_2 = datetime.now(pytz.timezone('America/Mexico_City')).replace(hour=0, minute=0, second=0)
+                datetime_end = datetime_now_2.replace(hour=23, minute=59, second=59)
+                return jsonify({'success': True, 'html': render_template('/restaurant/app/tables.html', datetime_now = datetime_now_2, datetime_end = datetime_end, tables = tables, reservations = reservations)})    
             elif request.method == 'GET' and path == 'api/web/widget/app/table':
                 param_id = v_requestArgs.get('id')
                 item = model_restaurant_tables.get(action = 'one', table_id = int(param_id) if param_id and param_id.isnumeric() else None)
@@ -603,22 +616,28 @@ def main_web(path):
                     if not table:
                         return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
                     
+                    pay = v_requestForm.get('pay')
+                    if not pay or not config_isFloat(pay) or float(pay) < 0:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una cantidad de pago válida e inténtelo de nuevo.'})
+                    
                     table_id = int(table_id) 
 
                     total = 0
                     order_details = restaurant_get_order_details({'table_id': table_id})
                     for item in order_details:
-                        print(item['status'])
                         if item['status'] == 0 or item['status'] == 1:
                             return jsonify({'success': False, 'msg': 'No se pudo finalizar, el motivo es que aun hay pedidos pendientes o en proceso.'})
 
-                        total += item['total']                    
+                        total += item['total']   
+
+                    if total > float(pay):
+                        return jsonify({'success': False, 'msg': 'El total es mayor. Por favor, proporcione una cantidad de pago válida e inténtelo de nuevo.'})
 
                     if not order_details:
                         return jsonify({'success': False, 'msg': 'Por favor, agregue al menos un producto válido e inténtelo de nuevo.'})
                     
                     order_id = str(uuid.uuid4())
-                    update = model_restaurant_order_details.update(action = 'all_order', order_id = order_id, table_id = table_id, total = total, user_id = v_user_id)
+                    update = model_restaurant_order_details.update(action = 'all_order', order_id = order_id, table_id = table_id, pay = float(pay), total = total, user_id = v_user_id)
                     if not update:
                         return jsonify({'success': False, 'msg': 'Algo salió mal al finalizar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
                     
@@ -958,6 +977,57 @@ def main_web(path):
                     table_states = model_restaurant_table_states.get(action = 'all')
                     return jsonify({'success': True, 'html': render_template('/restaurant/manage/table/edit.html', item = item, table_states = table_states)})    
             
+            #TABLE RESERVATIONS
+            elif request.method == 'GET' and path == 'api/web/widget/manage/table/reservations':
+                total = model_restaurant_table_reservations.get(action = 'all_count')
+
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/table_reservations.html', total = total)})    
+            elif request.method == 'POST' and path == 'api/web/data/manage/table/reservations':
+                if v_action == 'add':
+                    table_id = v_requestForm.get('table_id')
+                    table = model_restaurant_tables.get(action = 'one', table_id = int(table_id) if table_id and str(table_id).isnumeric() else None)
+                    if not table:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una mesa válida e inténtelo de nuevo.'})
+                    
+                    customer_id = v_requestForm.get('customer_id')
+                    customer = model_restaurant_customers.get(action = 'one', customer_id = customer_id)
+                    if not customer:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione un cliente válido e inténtelo de nuevo.'})                    
+
+                    date = v_requestForm.get('date')
+                    if not config_validateForm(form = date, min = 1) or not config_convertStringDate(date):
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione una fecha válida e inténtelo de nuevo.'})
+                    
+                    note = v_requestForm.get('note')
+
+                    insert = model_restaurant_table_reservations.insert(action = 'one', date = config_convertStringDate(date), note = html.escape(note), table_id = int(table_id), customer_id = customer_id)
+                    if not insert:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al agregar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se agregó correctamente. Redireccionando...'})     
+                elif v_action == 'delete':
+                    table_reservation_id = v_requestForm.get('table_reservation_id')
+                    item = model_restaurant_table_reservations.get(action = 'one', table_reservation_id = int(table_reservation_id) if table_reservation_id and table_reservation_id.isnumeric() else None)
+                    if not item:
+                        return jsonify({'success': False, 'msg': 'Por favor, proporcione la reservacion válida e inténtelo de nuevo.'})
+                    
+                    delete = model_restaurant_table_reservations.delete(action = 'one', table_reservation_id = int(table_reservation_id))
+                    if not delete:
+                        return jsonify({'success': False, 'msg': 'Algo salió mal al eliminar. Inténtalo de nuevo. Si el problema persiste, no dude en contactarnos para obtener ayuda.'}) 
+                    
+                    return jsonify({'success': True, 'msg': 'Se eliminó correctamente. Redireccionando...'})                
+            #TABLE RESERVATIONS ADD/EDIT
+            elif request.method == 'GET' and path == 'api/web/widget/manage/table/reservations/add':   
+                customers = model_restaurant_customers.get(action = 'all')    
+                tables = model_restaurant_tables.get(action = 'all')    
+                return jsonify({'success': True, 'html': render_template('/restaurant/manage/table_reservations/add.html', customers = customers, tables = tables)})    
+            elif request.method == 'GET' and path == 'api/web/widget/manage/table/reservations/edit':
+                param_id = v_requestArgs.get('id')
+                item = model_restaurant_tables.get(action = 'one', table_id = int(param_id) if param_id and param_id.isnumeric() else None)
+                if item:
+                    table_states = model_restaurant_table_states.get(action = 'all')
+                    return jsonify({'success': True, 'html': render_template('/restaurant/manage/table/edit.html', item = item, table_states = table_states)})    
+            
             #PRODUCTS
             elif request.method == 'GET' and path == 'api/web/widget/manage/products':
                 visible = model_restaurant_products.get(action = 'all_count_status', status = True)
@@ -1072,6 +1142,14 @@ def main_setCookie():
 def main_get_user_name(value):
     user = model_main_users.get(action = 'one', user_id = value)
     return f'{user["person"]["name"]} {user["person"]["surname"]}'
+
+@app_restaurant.template_filter('datelocal')
+def main_datelocal(value):
+    return config_convertLocalDate(value)
+
+@app_restaurant.template_filter('datelocal_time')
+def main_datelocal_time(value):
+    return config_convertLocalDateTime(value)
  
 @app_restaurant.route('/api/web/token/csrf', methods = ['GET'])
 @csrf.exempt

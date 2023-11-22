@@ -305,6 +305,16 @@ class model_restaurant_customers:
             if not data:
                 return None
             return data[0]
+        elif action == 'all':
+            pipeline = [
+                {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
+                {'$unwind': {'path': '$user_role', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'person.$id', 'foreignField': '_id', 'as': 'person'}},                
+                {'$unwind': {'path': '$person', 'preserveNullAndEmptyArrays': True}},
+            ]
+
+            data = list(db_mongo_restaurant.customers.aggregate(pipeline))
+            return data
         elif action == 'all_table':
             pipeline = [
                 {'$lookup': {'from': 'user_roles', 'localField': 'user_role.$id', 'foreignField': '_id', 'as': 'user_role'}},                
@@ -950,12 +960,13 @@ class model_restaurant_orders:
         return None
  
     @staticmethod
-    def insert(action = None, order_id = None, total = 0, user_id = None):
+    def insert(action = None, order_id = None, pay = 0, total = 0, user_id = None):
         try:
             if action == 'one_order_id':                
                 document = {
                     '_id': order_id,
                     'no': model_restaurant_next_count('order_id'),
+                    'pay': pay,
                     'total': total,
                     'regdate': datetime.utcnow(),
                     'user': user_id,
@@ -1067,10 +1078,10 @@ class model_restaurant_order_details:
             return False
     
     @staticmethod
-    def update(action = None, order_detail_id = None, order_id = None, table_id = None, total = 0, user_id = None, status_search = None, status_update = None):
+    def update(action = None, order_detail_id = None, order_id = None, table_id = None, pay = 0, total = 0, user_id = None, status_search = None, status_update = None):
         try:
             if action == 'all_order':
-                insert = model_restaurant_orders.insert(action = 'one_order_id', order_id = order_id, total = total, user_id = user_id)
+                insert = model_restaurant_orders.insert(action = 'one_order_id', order_id = order_id, pay = pay, total = total, user_id = user_id)
                 if insert:
                     document = {
                         'table.$id': table_id,
@@ -1137,3 +1148,132 @@ class model_restaurant_order_details:
         except Exception as e:
             return False
             
+class model_restaurant_table_reservations:
+    @staticmethod
+    def get(action = None, start = None, length = None, search = None, order_column = '_id', order_direction = 'asc', table_reservation_id = None):
+        if action == 'one':
+            data = db_mongo_restaurant.table_reservations.find_one({'_id': table_reservation_id})
+            return data
+        elif action == 'all_table':
+            pipeline = [
+                {'$lookup': {'from': 'tables', 'localField': 'table.$id', 'foreignField': '_id', 'as': 'table'}},                
+                {'$unwind': {'path': '$table', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'table_states', 'localField': 'table.table_status.$id', 'foreignField': '_id', 'as': 'table.table_status'}},                
+                {'$unwind': {'path': '$table.table_status', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'customers', 'localField': 'customer.$id', 'foreignField': '_id', 'as': 'customer'}},                
+                {'$unwind': {'path': '$customer', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'customer.person.$id', 'foreignField': '_id', 'as': 'customer.person'}},                
+                {'$unwind': {'path': '$customer.person', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'user_roles', 'localField': 'customer.user_role.$id', 'foreignField': '_id', 'as': 'customer.user_role'}},                
+                {'$unwind': {'path': '$customer.user_role', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'date': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'note': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'customer.person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'customer.person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$skip': start},
+                {'$limit': length}
+            ]
+
+            data = list(db_mongo_restaurant.table_reservations.aggregate(pipeline))
+            return data
+        elif action == 'all_table_count':
+            pipeline = [
+                {'$lookup': {'from': 'tables', 'localField': 'table.$id', 'foreignField': '_id', 'as': 'table'}},                
+                {'$unwind': {'path': '$table', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'table_states', 'localField': 'table.table_status.$id', 'foreignField': '_id', 'as': 'table.table_status'}},                
+                {'$unwind': {'path': '$table.table_status', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'customers', 'localField': 'customer.$id', 'foreignField': '_id', 'as': 'customer'}},                
+                {'$unwind': {'path': '$customer', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'customer.person.$id', 'foreignField': '_id', 'as': 'customer.person'}},                
+                {'$unwind': {'path': '$customer.person', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'user_roles', 'localField': 'customer.user_role.$id', 'foreignField': '_id', 'as': 'customer.user_role'}},                
+                {'$unwind': {'path': '$customer.user_role', 'preserveNullAndEmptyArrays': True}},
+                {
+                    '$match': {
+                        '$or': [
+                            {'_id': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'date': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'note': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'customer.person.name': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                            {'customer.person.surname': {'$regex': config_searchRegex(search), '$options': 'i'}},
+                        ]
+                    }
+                },
+                {'$sort': {order_column: 1 if order_direction == 'asc' else -1}},
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.table_reservations.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count
+        elif action == 'all_table_today':
+            pipeline = [
+                {'$lookup': {'from': 'tables', 'localField': 'table.$id', 'foreignField': '_id', 'as': 'table'}},                
+                {'$unwind': {'path': '$table', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'table_states', 'localField': 'table.table_status.$id', 'foreignField': '_id', 'as': 'table.table_status'}},                
+                {'$unwind': {'path': '$table.table_status', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'customers', 'localField': 'customer.$id', 'foreignField': '_id', 'as': 'customer'}},                
+                {'$unwind': {'path': '$customer', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'persons', 'localField': 'customer.person.$id', 'foreignField': '_id', 'as': 'customer.person'}},                
+                {'$unwind': {'path': '$customer.person', 'preserveNullAndEmptyArrays': True}},
+                {'$lookup': {'from': 'user_roles', 'localField': 'customer.user_role.$id', 'foreignField': '_id', 'as': 'customer.user_role'}},                
+                {'$unwind': {'path': '$customer.user_role', 'preserveNullAndEmptyArrays': True}},
+                {'$match': {'date': {'$gte': datetime.utcnow().replace(hour=0, minute=0, second=0) - timedelta(days=1), '$lt': datetime.utcnow().replace(hour=23, minute=59, second=59) + timedelta(days=1)}}},
+                {'$sort': {'date': 1}},
+            ]
+
+            data = list(db_mongo_restaurant.table_reservations.aggregate(pipeline))
+            return data
+        elif action == 'all_count':
+            pipeline = [
+                {'$count': 'total'}
+            ]
+
+            data = list(db_mongo_restaurant.table_reservations.aggregate(pipeline))          
+            count = data[0]['total'] if data else 0 
+            return count  
+        
+        return None
+ 
+    @staticmethod
+    def insert(action = None, date = None, note = None, table_id = None, customer_id = None):
+        try:
+            if action == 'one':
+                document = {
+                    '_id': model_restaurant_next_count('table_reservations_id'),
+                    'date': date,
+                    'note': note,
+                    'table': {'$ref': 'tables', '$id': table_id},
+                    'customer': {'$ref': 'customers', '$id': customer_id}
+                }
+
+                db_mongo_restaurant.table_reservations.insert_one(document)
+                return True
+            
+            return False
+        except Exception as e:
+            return False
+
+    @staticmethod
+    def delete(action = None, table_reservation_id = None):
+        try: 
+            if action == 'one':
+                document = {
+                    '_id': table_reservation_id
+                } 
+
+                db_mongo_restaurant.table_reservations.delete_one(document)
+                
+                return True
+            
+            return False
+        except Exception as e:
+            return False

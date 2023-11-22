@@ -566,6 +566,29 @@ p.footer {
   border: 2px solid var(--primary);
 }
 
+.bg-outline-danger {
+  font-weight: 600;
+  color: var(--danger) !important;
+  background: transparent;
+  border: 2px solid var(--danger);
+}
+
+.bg-outline-danger i{
+  color: var(--danger) !important;
+}
+
+.bg-outline-danger:hover {
+  font-weight: 600;
+  color: white !important;
+  background: var(--danger);
+  border: 2px solid var(--danger);
+}
+
+.bg-outline-danger:hover i{
+  color: white !important;
+}
+
+
 .bg-primary-opacity {
   font-weight: 600;
   color: var(--primary) !important;

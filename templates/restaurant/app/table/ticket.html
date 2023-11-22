@@ -47,7 +47,8 @@
     </table>
     <div class="total">
       <p><strong>Total:</strong> ${{order.total}}</p>
-      <p style="display: none;" id="change-p"><strong>Cambio:</strong> Q<span id="change">0</span></p>
+      <p><strong>Pago con:</strong> ${{order.pay}}</p>
+      <p><strong>Cambio:</strong> ${{order.pay - order.total}}</p>
     </div>
     <div class="info" style="margin-top: 10mm; display: flex !important; justify-content: center;">
         <div id="qrcode"></div>

@@ -14,8 +14,28 @@
                 <h1>{{table.name}}</h1>
                 <span class="badge {% if table.table_status._id == 1 %}bg-primary-opacity{% elif table.table_status._id == 2 %}bg-danger-opacity{% elif table.table_status._id == 3 %}bg-danger-opacity{% endif %}"><i class="fa fa-circle"></i> {{table.table_status.name}}</span>
             </div>
-            <div class="body">
-
+            <div class="body cart-container">
+                {% for reservation in reservations %}
+                {% if table._id == reservation.table._id and reservation.date|datelocal_time >= datetime_now and reservation.date|datelocal_time <= datetime_end %}
+                <!-- and reservation.date|datelocal_time <= datetime_end -->
+                <ul>
+                    <li class="mb-10px no-hover">
+                        <div class="d-flex flex-wrap g-10">
+                            <div class="d-flex align-items-center">
+                                <i class="fa-solid fa-person-chalkboard" style="font-size: 24px;"></i>
+                            </div>
+                            <div class="d-flex flex-direction-column">
+                                <p class="fw-bold">Reservacion</p>
+                                <p class="fw-500">{{reservation.customer.person.name}} {{reservation.customer.person.surname}}</p>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <p class="fw-bold">{{reservation.date|datelocal}}</p>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                {% endif %}
+                {% endfor %}
             </div>
         </div>
     </a>

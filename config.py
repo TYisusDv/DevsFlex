@@ -59,6 +59,8 @@ config_routes_restaurant = [
     'manage/table/add',
     'manage/table/edit',
     'manage/table/reservations',
+    'manage/table/reservations/add',
+    'manage/table/reservations/edit',
     'manage/users',
     'manage/user/add',
     'manage/user/edit',
@@ -133,6 +135,19 @@ def config_convertLocalDate(date):
     newdate = date_gmt.astimezone(pytz.timezone('America/Mexico_City'))
     date_converted = newdate.strftime('%d/%m/%Y %I:%M %p')    
     return date_converted
+
+def config_convertLocalDateTime(date):
+    date = datetime.strptime(str(date), '%Y-%m-%d %H:%M:%S')    
+    date_gmt = pytz.timezone('GMT').localize(date)
+    newdate = date_gmt.astimezone(pytz.timezone('America/Mexico_City'))
+    return newdate
+
+def config_convertStringDate(date):
+    try:
+        date_object = datetime.fromisoformat(date)    
+        return date_object 
+    except:
+        return False
 
 def config_isFloat(num):
     try:
