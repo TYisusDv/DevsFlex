@@ -1,17 +1,17 @@
 # DevsFlex
 Software para restaurante.
 
-# Descripción
+## Descripción
 Administra pedidos en tiempo real, mesas, usuarios, chefs. Creacion de tickets, reportes de ventas y pedidos. Tiene autentificacion por medio de token JTW para la conexión con el host principal.
 
-# Información
+## Información
 - Python
 - Flask
 - MongoDB
 - PyJWT
 - Socket.IO
 
-# Capturas
+## Capturas
 ![Captura 1](https://raw.githubusercontent.com/TYisusDv/DevsFlex/master/images/s1.png)
 ![Captura 2](https://raw.githubusercontent.com/TYisusDv/DevsFlex/master/images/s2.png)
 ![Captura 3](https://raw.githubusercontent.com/TYisusDv/DevsFlex/master/images/s3.png)
